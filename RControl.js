@@ -33,6 +33,10 @@ var RControl = {
 			this.view.updateView();
 		},
 		
+		newLinkMouseDown: function(){
+			this.linkStart = this.selectedNode;
+		},
+		
 		selectNode: function(node, noDeselectFirs) {
 			if(!noDeselectFirst || node == null) {
 				for(var i=0; i<this.model.nodes.length; i++){

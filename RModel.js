@@ -13,7 +13,7 @@ var Node = {
 } 
 
 var Link = {	
-		init: function(start, end) {
+		init: function(start, end, uri, name) {
 			this.type = purostr.link;
 			this.start = start;
 			this.end = end;
@@ -22,6 +22,11 @@ var Link = {
 			this.right = true;
 			this.left = false;
 			this.id = -1;
+			this.name = name;
+			this.uri = uri;
+		},
+		triplify: function() {
+			return {s: this.start.uri, p: this.uri, o: this.end.uri};
 		}
 }
 
