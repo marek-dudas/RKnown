@@ -4,17 +4,41 @@ var Node = {
 			this.name = name;
 			this.uri = uri;
 			this.id = -1;
+			this.visible = true;
 		},
 		
 		equals: function(node) {
 			return this.uri == node.uri;
+		},
+		
+		triplify: function() {
+			if(this.visible == false) return "";
+			var tripleString = "<"+this.uri+"> <http://rknown.com/xcoord> "+this.x+" .";
+			tripleString += "<"+this.uri+"> <http://rknown.com/ycoord> "+this.y+" .";
+			return tripleString;
 		}
 		
 } 
 
+var Triple = {
+		init: function(subject, predicate, object) {
+			this.s = subject;
+			this.p = predicate;
+			this.o = object;
+		},
+		create: function(subject, predicate, object) {
+			var triple = Object.create(Triple);
+			triple.init(subject, predicate, object);
+			return triple;			
+		},
+		str: function() {
+			return "<"+this.s+"> <"+this.p+ "> <"+this.o+"> .";
+		}
+}
+
 var Link = {	
 		init: function(start, end, uri, name) {
-			this.type = purostr.link;
+			this.type = "link";
 			this.start = start;
 			this.end = end;
 			this.source = start;
@@ -26,7 +50,14 @@ var Link = {
 			this.uri = uri;
 		},
 		triplify: function() {
-			return {s: this.start.uri, p: this.uri, o: this.end.uri};
+			return Triple.create(this.start.uri, this.uri, this.end.uri).str();
+		},
+		setEnd: function(end) {
+			this.end = end;
+			this.target = end;
+		},
+		dashed: function() {
+			return "";
 		}
 }
 
@@ -73,7 +104,6 @@ var RModel = {
 		addLink: function(link) {
 			link.id = this.idCounter++;
 			this.links.push(link);
-			this.updateBTypeLevels();
 		},
 
 		getNodeById: function(id) {
@@ -86,8 +116,12 @@ var RModel = {
 		updateCounter: function(idToCheck) {
 			if(idToCheck>=this.idCounter) this.idCounter=idToCheck+1;
 		},
-
-
+		
+		getRdf: function() {
+			var rdf = "";
+			for(var i=0; i<this.links.length; i++) rdf+=this.links[i].triplify();
+			for(var i=0; i<this.nodes.length; i++) rdf+=this.nodes[i].triplify();
+		},
 
 		getLinks: function() {
 			return this.links;
@@ -95,6 +129,10 @@ var RModel = {
 
 		getNodes: function() {
 			return this.nodes;
-		}
+		},
+		
+		buildFromRdf: function(rdfData) {
+			
+		},
 };
 

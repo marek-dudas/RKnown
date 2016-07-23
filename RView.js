@@ -47,6 +47,10 @@ var RView = {
 		    	.attr('stdDeviation',3);
 		    
 		    this.rootSvg = this.svg;	
+		    
+		    this.rootSvg.on("mousemove", function() {RKnown.control.mouseMove(d3.mouse(this));});
+		    
+		    
 		    this.svg = this.svg.append("svg:g");
 		    
 		    	
@@ -65,9 +69,38 @@ var RView = {
 			zoomListener(this.rootSvg);
 			this.rootSvg.on("dblclick.zoom", null);
 			
+
+		    this.canvas = this.svg.append("svg:g");
+		    
+		    this.createLinkButton();
+			
 			window.addEventListener('resize', this.updateSize.bind(this));
 			
 			$(window).load(this.updateSize.bind(this));
+		},
+		
+		createLinkButton: function() {
+			var arc = d3.svg.symbol().type('triangle-up');
+			//.size(function(d){ return scale(d); });
+
+			this.linkButton = this.canvas.append('path')
+			.attr('d',arc)
+			.attr('fill', '#0a0')
+			.attr('stroke','#000')
+			.attr('stroke-width',1)
+			.style("visibility", "hidden")
+			.on("click", RKnown.control.linkButtonClick.bind(RKnown.control));
+			//.attr('transform',"translate("+(i*38)+","+(10)+")"; });
+		},
+		
+		moveLinkButton: function(x,y) {
+			this.linkButton.x = x;
+			this.linkButton.y = y;
+			this.linkButton.attr('transform',"translate("+x+","+y+")");
+		},
+		
+		showLinkButton: function(visible) {
+			this.linkButton.style("visibility", visible?"visible":"hidden");			
 		},
 		
 		zoomHandler: function () {
@@ -132,7 +165,7 @@ var RView = {
 				    
 			this.linktext = this.linktext.data(this.model.links, function(d) {return d.id;});
 		    var linktextEnter =this.linktext.enter().append("g").attr("class", "linklabelholder")
-			        .on("click", function(d){puroControl.canvasMouseDown(d3.mouse(this), d);});
+			        .on("click", function(d){RKnown.control.canvasMouseDown(d3.mouse(this), d);});
 		     linktextEnter.append("text")
 		     .attr("class", "linklabel")
 		     .attr("dx", 1)
@@ -181,15 +214,19 @@ var RView = {
 			    //this.nodes.enter()
 			    var nodesEnter = this.nodes.enter().append("g")
 			        .on("click", function(d){
-			        	RControl.canvasMouseDown(d3.mouse(this), d);
+			        	RKnown.control.canvasMouseDown(d3.mouse(this), d);
 			        	})
 			        .on('dblclick', function(d){
-					     RControl.nodeDblClick(d);
+					     RKnown.control.nodeDblClick(d);
 					      var text = d3.select(this).select("text")[0][0];
 		    			  text.selectSubString(0,0);
-		    			})    			
+		    			})
+		    		.on('mouseover', function(d){
+		    			RKnown.control.nodeMouseOver(d);
+		    		})
 			        .call(node_drag)
-			        .classed("node",true); 
+			        .classed("node",true)
+			        .style("visibility", function(d) {return d.visible?"visible":"hidden";}); 
 			        //.append("Scircle")
 			        //.attr("r", 10)
 			    nodesEnter.append("path")

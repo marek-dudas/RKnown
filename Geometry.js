@@ -23,7 +23,7 @@ var Geometry = {
 			var minDist = Number.MAX_VALUE;
 			var minIndex = 0;
 			for(var i = 0, l = points.length; i<l; i++) {
-				var dist = pointDistance(from, points[i]);
+				var dist = this.pointDistance(from, points[i]);
 				if(dist<minDist) {
 					minDist = dist;
 					minIndex = i;
@@ -47,12 +47,12 @@ var Geometry = {
 
 //ellipse a,b,x,y
 		nearEllipseIntersection: function (ellipse,line, nearTo) {
-			lineEq = lineEquation(line.start, line.end);
-			return nearPoint(nearTo, ellipseLineIntersection(ellipse.a, ellipse.b, ellipse.x, ellipse.y, lineEq.c, lineEq.d));
+			lineEq = this.lineEquation(line.start, line.end);
+			return this.nearPoint(nearTo, this.ellipseLineIntersection(ellipse.a, ellipse.b, ellipse.x, ellipse.y, lineEq.c, lineEq.d));
 		},
 		
 		rayLineIntersection: function (rayStart, rayEq, lineStart, lineEnd) {
-			lineEq = lineEquation(lineStart, lineEnd);
+			lineEq = this.lineEquation(lineStart, lineEnd);
 			var point = {};
 			lineVec = {};
 			if(lineEq!=null){
@@ -99,19 +99,19 @@ Node.linkIntersection = function(link, nearTo){
 };
 
 
-Node.countEndFromIntersection = function() {
+Link.countEndFromIntersection = function() {
 	var intersection = this.end.linkIntersection(this, this.start);
 	this.endX = intersection.x;
 	this.endY = intersection.y;
 };
 
-Node.countStartFromIntersection = function() {
+Link.countStartFromIntersection = function() {
 	var intersection = this.start.linkIntersection(this, this.end);
 	this.startX = intersection.x;
 	this.startY = intersection.y;
 };
 
-Node.getMiddlePoint = function() {
+Link.getMiddlePoint = function() {
 	lineVec = new Point();
 	lineVec.x = this.end.x - this.start.x;
 	lineVec.y = this.end.y - this.start.y;
