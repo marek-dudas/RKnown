@@ -5,6 +5,7 @@ var RControl = {
 			this.selectedNode = null;
 			this.blankNode = null;
 			this.inputFieldId = '#'+inputFieldId;
+			this.predicateInputFieldId = '#newPredicateField';
 			this.creationLink = null;
 			
 			$(this.inputFieldId).bind("enterKey", this.addEntityFromTextField.bind(this));
@@ -14,10 +15,28 @@ var RControl = {
 			        $(this).trigger("enterKey");
 			    }
 			});
+			
+			$(this.predicateInputFieldId).bind("enterKey", this.setPredicateNameFromField.bind(this));
+			$(this.predicateInputFieldId).keyup(function(e){
+			    if(e.keyCode == 13)
+			    {
+			        $(this).trigger("enterKey");
+			    }
+			});
 		},
 
 		setView: function(view) {
 			this.view = view;
+		},
+		
+		showPredicateSelection: function(visible) {
+			d3.select('#predicateSelection').style("visibility", visible?"visible":"hidden");
+		},
+		
+		setPredicateNameFromField: function() {
+			this.creationLink.setUri($(this.predicateInputFieldId).val());
+			this.showPredicateSelection(false);
+			this.view.updateView();
 		},
 		
 		addEntityFromTextField: function() {
@@ -44,6 +63,7 @@ var RControl = {
 				this.linkStart = null;
 				this.selectedNode.selected = false;
 				this.selectedNode = null;
+				this.showPredicateSelection(true);
 			}
 			this.selectNode(node, d3.event.shiftKey);
 			this.view.updateView();

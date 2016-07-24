@@ -165,7 +165,12 @@ var RView = {
 				    
 			this.linktext = this.linktext.data(this.model.links, function(d) {return d.id;});
 		    var linktextEnter =this.linktext.enter().append("g").attr("class", "linklabelholder")
-			        .on("click", function(d){RKnown.control.canvasMouseDown(d3.mouse(this), d);});
+			        .on("click", function(d){
+			        	RKnown.control.canvasMouseDown(d3.mouse(this), d);
+			        	d3.select("#predicateSelection")
+		        		.style("left", (d3.event.clientX+30)+"px")
+		        		.style("top", (d3.event.clientY+180)+"px")
+			        	});
 		     linktextEnter.append("text")
 		     .attr("class", "linklabel")
 		     .attr("dx", 1)

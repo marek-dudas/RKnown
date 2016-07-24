@@ -4,5 +4,8 @@ var SparqlFace = {
 		},
 		saveTriple: function(triple) {
 			
+		},
+		nameFromUri: function(uri) {
+			return uri.match("[^\/#]+$");
 		}
 }

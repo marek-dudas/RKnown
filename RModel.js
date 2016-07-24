@@ -56,6 +56,10 @@ var Link = {
 			this.end = end;
 			this.target = end;
 		},
+		setUri: function(uri) {
+			this.uri = uri;
+			this.name = SparqlFace.nameFromUri(uri);
+		},
 		dashed: function() {
 			return "";
 		}

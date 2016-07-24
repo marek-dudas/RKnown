@@ -13,6 +13,7 @@
   		<script src="https://d3js.org/d3.v3.min.js"></script>
 		<!--  <script src="//cdnjs.cloudflare.com/ajax/libs/jsonld/0.3.15/jsonld.js"></script> -->
   
+  		<script src="SparqlFace.js"></script>
 	    <script src="RModel.js"></script>
 	    <script src="Geometry.js"></script>
 	    <script src="RControl.js"></script>
@@ -24,6 +25,14 @@
 		  <label for="newEntityField">Add new thing: </label>
 		  <input id="newEntityField">
 		</div>
+		
+		<div style="position:absolute; left:500px; top:200px; width:230px; height:120px; 
+			z-index:99998; background: #cccccc; visibility: hidden;"
+    		 id="predicateSelection" class="settingsPopUp">
+    		 		Name of the relation: <br/>
+    		 		<input id="newPredicateField">
+	        		<div id="existingPredicates"></div>
+	    </div>
 		
 		<div style="width:1100px; height:900px; border:1px solid" id="canvas">
 	    </div>
