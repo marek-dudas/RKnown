@@ -7,6 +7,7 @@ var RControl = {
 			this.inputFieldId = '#'+inputFieldId;
 			this.predicateInputFieldId = '#newPredicateField';
 			this.creationLink = null;
+			SparqlFace.config(null);
 			
 			$(this.inputFieldId).bind("enterKey", this.addEntityFromTextField.bind(this));
 			$(this.inputFieldId).keyup(function(e){
@@ -23,6 +24,12 @@ var RControl = {
 			        $(this).trigger("enterKey");
 			    }
 			});
+			
+			d3.select('#btnSave').on('click', this.save.bind(this));
+		},
+		
+		save: function() {
+			SparqlFace.saveGraph(this.model.getRdf())
 		},
 
 		setView: function(view) {
@@ -41,8 +48,8 @@ var RControl = {
 		
 		addEntityFromTextField: function() {
 			var node = Object.create(Node);
-			var nodeName = $(this.inputFieldId).val();
-			node.init(nodeName, nodeName);
+			var nodeUri = $(this.inputFieldId).val();
+			node.init(nodeUri, SparqlFace.nameFromUri(nodeUri));
 			node.x = 100;
 			node.y = 100;
 			this.model.addNode(node);

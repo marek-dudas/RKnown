@@ -147,6 +147,8 @@ curl_setopt($ch, CURLOPT_URL, "$finalUrl");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HEADER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+curl_setopt($ch,CURLOPT_POST, 1);
+curl_setopt($ch,CURLOPT_POSTFIELDS, $validArgsStr);
 
 $response = curl_exec($ch);
 if($response === FALSE) {

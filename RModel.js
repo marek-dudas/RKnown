@@ -125,6 +125,7 @@ var RModel = {
 			var rdf = "";
 			for(var i=0; i<this.links.length; i++) rdf+=this.links[i].triplify();
 			for(var i=0; i<this.nodes.length; i++) rdf+=this.nodes[i].triplify();
+			return rdf;
 		},
 
 		getLinks: function() {
