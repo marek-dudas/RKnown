@@ -142,7 +142,7 @@ SPARQL.Service = function(endpoint, remoteEndpoint) {
 	var _default_graphs = [];
 	var _named_graphs = [];
 	var _prefix_map = {};
-    var _method = 'GET';
+    var _method = 'POST';
 	var _output = 'json';
 	var _max_simultaneous = 0;
 	var _request_headers = {};
@@ -438,7 +438,10 @@ SPARQL.Query = function(service, priority) {
 		
 		// specify JSON output (currently output= supported by latest Joseki) (or other output)
 		urlQueryString += 'output=' + _output + '&';
-		if(_output=='json') urlQueryString += 'format='+encodeURIComponent('application/sparql-results+json')+'&';
+		if(_output=='json') {
+			urlQueryString += 'format='+encodeURIComponent('application/sparql-results+json')+'&';
+			urlQueryString += 'Accept='+encodeURIComponent('application/sparql-results+json')+'&';
+		}
 		return urlQueryString + 'query=' + encodeURIComponent(this.queryString());
 	}
 	

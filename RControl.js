@@ -7,7 +7,8 @@ var RControl = {
 			this.inputFieldId = '#'+inputFieldId;
 			this.predicateInputFieldId = '#newPredicateField';
 			this.creationLink = null;
-			SparqlFace.config(null);
+			SparqlFace.config(this.fillInputField.bind(this));
+			SparqlFace.getAllEntities();
 			
 			$(this.inputFieldId).bind("enterKey", this.addEntityFromTextField.bind(this));
 			$(this.inputFieldId).keyup(function(e){
@@ -26,6 +27,12 @@ var RControl = {
 			});
 			
 			d3.select('#btnSave').on('click', this.save.bind(this));
+		},
+		
+		fillInputField: function(strings) {
+			$(this.inputFieldId).autocomplete({
+			      source: strings
+			    });
 		},
 		
 		save: function() {

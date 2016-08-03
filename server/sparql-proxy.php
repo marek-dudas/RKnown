@@ -10,11 +10,11 @@ error_reporting(E_ALL);
 /*****************************************************************************/
 
 // Note: The defaultServiceUrl is not subject to proxy url validation.
-$defaultServiceUrl = "http://localhost:8080/openrdf-sesame/repositories/rknown";
+$defaultServiceUrl = "http://localhost:8890/sparql";
 
 
 // For security reasons, only SPARQL query string parameters are forwarded.
-$allowedParams = array("format", "query", "timeout", "default-graph-uri");
+$allowedParams = array("format", "query", "timeout", "default-graph-uri", "Accept");
 
 
 
