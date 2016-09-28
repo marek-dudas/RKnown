@@ -6,9 +6,11 @@ var RControl = {
 			this.blankNode = null;
 			this.inputFieldId = '#'+inputFieldId;
 			this.predicateInputFieldId = '#newPredicateField';
+			this.typeInputFielId = '#typeField';
 			this.creationLink = null;
-			SparqlFace.config(this.fillInputField.bind(this));
+			SparqlFace.config(this.fillInputField.bind(this), this.fillPredicateField.bind(this));
 			SparqlFace.getAllEntities();
+			SparqlFace.getAllPredicates();
 			
 			$(this.inputFieldId).bind("enterKey", this.addEntityFromTextField.bind(this));
 			$(this.inputFieldId).keyup(function(e){
@@ -26,11 +28,25 @@ var RControl = {
 			    }
 			});
 			
+			$(this.typeInputFielId).bind("enterKey", this.setTypeFromField.bind(this));
+			$(this.typeInputFielId).keyup(function(e){
+			    if(e.keyCode == 13)
+			    {
+			        $(this).trigger("enterKey");
+			    }
+			});
+			
 			d3.select('#btnSave').on('click', this.save.bind(this));
 		},
 		
 		fillInputField: function(strings) {
 			$(this.inputFieldId).autocomplete({
+			      source: strings
+			    });
+		},
+		
+		fillPredicateField: function(strings) {
+			$(this.predicateInputFieldId).autocomplete({
 			      source: strings
 			    });
 		},
@@ -50,6 +66,22 @@ var RControl = {
 		setPredicateNameFromField: function() {
 			this.creationLink.setUri($(this.predicateInputFieldId).val());
 			this.showPredicateSelection(false);
+			this.view.updateView();
+		},
+		
+		setTypeFromField: function() {
+			var node = Object.create(Node);
+			var nodeUri = $(this.typeInputFielId).val();
+			node.init(nodeUri, SparqlFace.nameFromUri(nodeUri));
+			node.x = this.selectedNode.x;
+			node.y = this.selectedNode.y-100;
+			node.setTypeNode();
+			this.model.addNode(node);
+			
+			var link = Object.create(Link);
+			link.init(this.selectedNode, node, "rdf:type", "is");
+			this.model.addLink(link);
+			
 			this.view.updateView();
 		},
 		
@@ -86,8 +118,7 @@ var RControl = {
 		nodeMouseOver: function(node) {
 			if(!d3.event.shiftKey) {
 				this.selectNode(node, false);
-				this.view.moveLinkButton(this.selectedNode.x+120, this.selectedNode.y)
-				this.view.showLinkButton(true);
+				this.view.showNodeButtons(this.selectedNode.x+60, this.selectedNode.y);
 				this.view.updateView();
 			}
 		},
@@ -98,6 +129,10 @@ var RControl = {
 			linkButton.attr("x",this.selectedNode.x+120);
 			linkButton.attr("y", this.selectedNode.y);
 		},*/
+		
+		typeButtonClick: function(){
+			
+		},
 		
 		linkButtonClick: function(){
 			if(this.linkStart == null) {

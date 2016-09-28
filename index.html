@@ -11,7 +11,7 @@
   		<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
   		<script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
   		<script src="https://d3js.org/d3.v3.min.js"></script>
-		<!--  <script src="//cdnjs.cloudflare.com/ajax/libs/jsonld/0.3.15/jsonld.js"></script> -->
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/jsonld/0.3.15/jsonld.js"></script>
   
   		<script src="settings.js"></script>
   		<script src="sparql.js"></script>
@@ -27,16 +27,21 @@
 		  <label for="newEntityField">Add new thing: </label>
 		  <input id="newEntityField">
 		  <input type="button" id="btnSave" value="Save"/>
-		</div>
+		</div>		
 		
-		<div class="ui-widget" style="position:absolute; left:500px; top:200px; width:230px; height:120px; 
-			z-index:99998; background: #cccccc; visibility: hidden;"
+		<div style="width:1100px; height:900px; border:1px solid" id="canvas">
+	    </div>	    
+	    
+		<div class="ui-widget" style="position:absolute; left:500px; top:200px; width:330px; height:220px; background: #cccccc; visibility: hidden;"
     		 id="predicateSelection" class="settingsPopUp">
     		 		Name of the relation: <br/>
     		 		<input id="newPredicateField">
 	    </div>
-		
-		<div style="width:1100px; height:900px; border:1px solid" id="canvas">
+	    
+	    <div class="ui-widget" style="position:absolute; left:500px; top:200px; width:330px; height:220px; background: #cccccc; visibility: hidden;"
+    		 id="typeSelection" class="settingsPopUp">
+    		 		What kind of thing is this?: <br/>
+    		 		<input id="typeField">
 	    </div>
 	</body>
 	<script type="text/javascript">

@@ -5,6 +5,11 @@ var Node = {
 			this.uri = uri;
 			this.id = -1;
 			this.visible = true;
+			this.typeNode = false;
+		},
+		
+		setTypeNode: function() {
+			this.typeNode = true;
 		},
 		
 		equals: function(node) {

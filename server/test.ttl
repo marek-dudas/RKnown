@@ -1,1 +1,1 @@
-<http://some/foo> <http://some/foobar> <http://some/boo> .<http://some/foo> <http://rknown.com/xcoord> 100 .<http://some/foo> <http://rknown.com/ycoord> 100 .<http://some/boo> <http://rknown.com/xcoord> 382.99999237060547 .<http://some/boo> <http://rknown.com/ycoord> 208.00000762939453 .
+<http://some/thing> <blabol> <http://some/blob> .<http://some/thing> <http://rknown.com/xcoord> 100 .<http://some/thing> <http://rknown.com/ycoord> 100 .<http://some/blob> <http://rknown.com/xcoord> 366.99999237060547 .<http://some/blob> <http://rknown.com/ycoord> 246 .

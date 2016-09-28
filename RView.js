@@ -69,10 +69,10 @@ var RView = {
 			zoomListener(this.rootSvg);
 			this.rootSvg.on("dblclick.zoom", null);
 			
-
 		    this.canvas = this.svg.append("svg:g");
 		    
 		    this.createLinkButton();
+		    this.createTypeButton();		    
 			
 			window.addEventListener('resize', this.updateSize.bind(this));
 			
@@ -81,7 +81,6 @@ var RView = {
 		
 		createLinkButton: function() {
 			var arc = d3.svg.symbol().type('triangle-up');
-			//.size(function(d){ return scale(d); });
 
 			this.linkButton = this.canvas.append('path')
 			.attr('d',arc)
@@ -90,18 +89,36 @@ var RView = {
 			.attr('stroke-width',1)
 			.style("visibility", "hidden")
 			.on("click", RKnown.control.linkButtonClick.bind(RKnown.control));
-			//.attr('transform',"translate("+(i*38)+","+(10)+")"; });
 		},
-		
+
+		createTypeButton: function() {
+			var arc = d3.svg.symbol().type('triangle-down');
+
+			this.linkButton = this.canvas.append('path')
+			.attr('d',arc)
+			.attr('fill', '#00a')
+			.attr('stroke','#000')
+			.attr('stroke-width',1)
+			.style("visibility", "hidden")
+			.on("click", RKnown.control.typeButtonClick.bind(RKnown.control));
+		},
+		/*
 		moveLinkButton: function(x,y) {
 			this.linkButton.x = x;
 			this.linkButton.y = y;
+			
+		},*/
+		
+		showNodeButtons: function(x,y) {
 			this.linkButton.attr('transform',"translate("+x+","+y+")");
+			this.linkButton.style("visibility", "visible");
+			this.typeButton.attr('transform', "translate("+(x-30)+","+(y-5)+")");
 		},
 		
-		showLinkButton: function(visible) {
-			this.linkButton.style("visibility", visible?"visible":"hidden");			
-		},
+		hideNodeButtons: function() {
+			this.linkButton.style("visibility", "hidden");
+			this.typeButton.style("visibility", "hidden");
+		},			
 		
 		zoomHandler: function () {
 			var scale = 1 - ( (1 - d3.event.scale) * 0.1 );
