@@ -6,6 +6,8 @@ var Node = {
 			this.id = -1;
 			this.visible = true;
 			this.typeNode = false;
+			this.width = RSettings.nodeWidth;
+			this.height = RSettings.nodeHeight;
 		},
 		
 		setTypeNode: function() {
@@ -21,6 +23,12 @@ var Node = {
 			var tripleString = "<"+this.uri+"> <http://rknown.com/xcoord> "+this.x+" .";
 			tripleString += "<"+this.uri+"> <http://rknown.com/ycoord> "+this.y+" .";
 			return tripleString;
+		},
+		
+		copy: function() {
+			var nodeCopy = Object.create(Node);
+			nodeCopy.init(this.uri, this.name);
+			return nodeCopy;
 		}
 		
 } 

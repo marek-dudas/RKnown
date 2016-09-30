@@ -3,7 +3,7 @@
  */
 
 var RView = {
-		init: function init(viewingElement, width, height) {
+		init: function init(viewingElement, relatedCanvasElement, width, height) {
 			
 			this.width = 800;
 			this.height = 600;
@@ -11,6 +11,13 @@ var RView = {
 		    this.layoutRunning = false;
 		    
 		    this.viewingElement = d3.select("#"+viewingElement);
+		    
+		    this.relatedCanvas = d3.select("#"+relatedCanvasElement);
+		    
+		    this.relatedSvg = this.relatedCanvas.append("svg").attr("width", RSettings.relatedNodesCanvasWidth)
+		    	.attr("height", height);
+		    
+		    this.relatedNodes = this.relatedSvg.append("svg:g").selectAll("g");
 			    
 			this.svg = this.viewingElement
 				.append("svg")
@@ -94,7 +101,7 @@ var RView = {
 		createTypeButton: function() {
 			var arc = d3.svg.symbol().type('triangle-down');
 
-			this.linkButton = this.canvas.append('path')
+			this.typeButton = this.canvas.append('path')
 			.attr('d',arc)
 			.attr('fill', '#00a')
 			.attr('stroke','#000')
@@ -110,9 +117,10 @@ var RView = {
 		},*/
 		
 		showNodeButtons: function(x,y) {
-			this.linkButton.attr('transform',"translate("+x+","+y+")");
+			this.linkButton.attr('transform',"translate("+(x+20)+","+(y-30)+")");
 			this.linkButton.style("visibility", "visible");
-			this.typeButton.attr('transform', "translate("+(x-30)+","+(y-5)+")");
+			this.typeButton.attr('transform', "translate("+(x-30)+","+(y-30)+")");
+			this.typeButton.style("visibility", "visible");
 		},
 		
 		hideNodeButtons: function() {
@@ -143,6 +151,13 @@ var RView = {
 		},
 		
 		tick: function() {
+		    
+		    if(this.model.nodes.length>0 && this.nodes.length>0){
+			    this.nodes.attr('transform', function(d) {
+		    		return 'translate(' + d.x + ',' + d.y + ')';
+		  		});
+		    }
+		    
 			if(this.model.links.length>0 && this.edges.length>0){
 				this.edges.attr("x1", function(d) { d.countStartFromIntersection(); return d.startX; })
 			     .attr("y1", function(d) { return d.startY; })
@@ -154,17 +169,79 @@ var RView = {
 		    		return 'translate(' + p.x + ',' + p.y + ')';}); 
 		    }
 		    
-		    if(this.model.nodes.length>0 && this.nodes.length>0){
-			    this.nodes.attr('transform', function(d) {
-		    		return 'translate(' + d.x + ',' + d.y + ')';
-		  		});
-		    }
-		    
 		},
 		
 		setData: function(model) {
 			this.model = model;
 			this.startLayout();
+		},
+		
+		setDraggedNode: function(node) {
+			
+			this.dragSvg = d3.select("body").append("svg").style("position", "absolute")
+						.style("z-index", 1000)
+						.attr("overflow", "visible")
+						.attr("width", node.width)
+						.attr("height", node.height);
+			
+			this.dragButton = this.dragSvg.append("g").classed("node",true);
+			
+			var button = this.dragButton.append("path").attr("d", node.getPathData());
+					//if(specialColor != null) button.style("fill", specialColor);
+			this.dragButton.append("text").text(node.name)
+				.attr("text-anchor", "middle")
+				.attr("x", "0") //width/2+5)
+				.attr("y","0")
+			     .attr("dx", 1)
+			     .attr("dy", ".35em");
+		  		//.style("font-size", Math.min(node.width, (node.width - 8) 
+		  		//	/ button.getComputedTextLength() * 12) + "px");
+			
+			var w = d3.select(window)
+		    .on("mousemove", mousemove)
+		    .on("mouseup", mouseup);
+
+			d3.event.preventDefault(); // disable text dragging
+			
+			function mousemove() {
+				RKnown.view.dragSvg.style("left", d3.mouse(d3.select("body").node())[0]+"px").style("top", d3.mouse(d3.select("body").node())[1]+node.height+"px");
+			}
+			
+			function mouseup() {
+				  w.on("mousemove", null).on("mouseup", null);
+				  RKnown.view.dragSvg.remove();
+				  RKnown.control.putRelatedNode(d3.mouse(RKnown.view.svg.node()));
+			}
+		},
+		
+		updateRelated: function() {
+			this.relatedNodes = this.relatedNodes.data(RKnown.control.relatedNodes);
+			var nodesEnter = this.relatedNodes.enter().append("g")
+	        .classed("node",true)
+	        .attr('transform', function(d) {
+	    		return 'translate( '+x+', '+y+')';
+	  		})
+		  	.on("mousedown", function(d){
+		  		  RKnown.control.relatedNodeMouseDown(d);
+		  		});
+	    nodesEnter.append("path")
+	        .attr("d", function(d) {
+	        	return d.getPathData();});	  
+	        
+	    nodesEnter.append("text")
+	    	.classed("nodename", true)
+	    	.text(function(d) { return d.name; })	    	
+      		.style("font-size", function(d) { 
+      			return Math.max(Math.min(16, Math.min(d.width, (d.width - 8) 
+      			/ this.getComputedTextLength() * 14)), 13) + "px"; })      			
+			.attr("x","0")//function(d) {return d.width/2+2;})
+			.attr("y","0") 
+		     .attr("dx", 1)
+		     .attr("dy", ".35em");
+		 	 
+		 this.nodes.selectAll(".nodename").text(function(d) {return d.name;});
+		 
+		 this.relatedNodes.exit().remove();
 		},
 		
 		updateView: function() {

@@ -1,1 +1,0 @@
-<http://some/thing> <blabol> <http://some/blob> .<http://some/thing> <http://rknown.com/xcoord> 100 .<http://some/thing> <http://rknown.com/ycoord> 100 .<http://some/blob> <http://rknown.com/xcoord> 366.99999237060547 .<http://some/blob> <http://rknown.com/ycoord> 246 .

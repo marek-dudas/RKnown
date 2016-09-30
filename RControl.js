@@ -8,7 +8,8 @@ var RControl = {
 			this.predicateInputFieldId = '#newPredicateField';
 			this.typeInputFielId = '#typeField';
 			this.creationLink = null;
-			SparqlFace.config(this.fillInputField.bind(this), this.fillPredicateField.bind(this));
+			this.relatedNodes = [];
+			SparqlFace.config(this.fillInputField.bind(this), this.fillPredicateField.bind(this), this.addRelatedNodes.bind(this));
 			SparqlFace.getAllEntities();
 			SparqlFace.getAllPredicates();
 			
@@ -39,6 +40,31 @@ var RControl = {
 			d3.select('#btnSave').on('click', this.save.bind(this));
 		},
 		
+		addRelatedNodes: function(strings) {
+			var x=RSettings.nodeWidth/2;
+			var y=RSettings.nodeHeight/2;
+			if(this.relatedNodes.length>0) {
+				x = this.relatedNodes[this.relatedNodes.length-1].x+RSettings.nodeWidth;
+				y = this.relatedNodes[this.relatedNodes.length-1].y+RSettings.nodeHeight;
+			}
+			for(var i=0; i<strings.length; i++) {
+				if(x>RSettings.relatedNodesCanvasWidth) {
+					x=RSettings.nodeWidth/2;
+					y+=RSettings.nodeHeight;
+				}
+				var node = Object.create(Node);
+				var nodeUri = strings[i];
+				node.init(nodeUri, SparqlFace.nameFromUri(nodeUri));
+				x+=RSettings.nodeWidth;
+				this.relatedNodes.push(node);
+			}
+			this.view.updateRelated();
+		},
+		
+		relatedNodeMouseDown: function(node) {
+			this.view.setDraggedNode(node.copy());
+		},
+		
 		fillInputField: function(strings) {
 			$(this.inputFieldId).autocomplete({
 			      source: strings
@@ -63,6 +89,14 @@ var RControl = {
 			d3.select('#predicateSelection').style("visibility", visible?"visible":"hidden");
 		},
 		
+		showTypeSelection: function(visible) {
+			if(this.selectedNode!=null) {
+				d3.select('#typeSelection').style("left", this.selectedNode.x+30)
+				.style("top", this.selectedNode.y-30);
+			}
+			d3.select('#typeSelection').style("visibility", visible?"visible":"hidden");
+		},
+		
 		setPredicateNameFromField: function() {
 			this.creationLink.setUri($(this.predicateInputFieldId).val());
 			this.showPredicateSelection(false);
@@ -73,16 +107,18 @@ var RControl = {
 			var node = Object.create(Node);
 			var nodeUri = $(this.typeInputFielId).val();
 			node.init(nodeUri, SparqlFace.nameFromUri(nodeUri));
-			node.x = this.selectedNode.x;
+			node.x = this.selectedNode.x-1;
 			node.y = this.selectedNode.y-100;
 			node.setTypeNode();
 			this.model.addNode(node);
+			this.view.updateView();
 			
 			var link = Object.create(Link);
 			link.init(this.selectedNode, node, "rdf:type", "is");
 			this.model.addLink(link);
-			
+			this.showTypeSelection(false);
 			this.view.updateView();
+			
 		},
 		
 		addEntityFromTextField: function() {
@@ -93,6 +129,7 @@ var RControl = {
 			node.y = 100;
 			this.model.addNode(node);
 			this.view.updateView();
+			SparqlFace.getRelatedNodes(node);
 		},
 		
 		mouseMove: function(location) {
@@ -115,6 +152,13 @@ var RControl = {
 			this.view.updateView();
 		},
 		
+		putRelatedNode: function(location) {
+			this.relatedNode.x = location[0];
+			this.relatedNode.y = location[1];
+			this.model.addNode(this.relatedNode);
+			this.view.updateView();
+		},
+		
 		nodeMouseOver: function(node) {
 			if(!d3.event.shiftKey) {
 				this.selectNode(node, false);
@@ -131,7 +175,7 @@ var RControl = {
 		},*/
 		
 		typeButtonClick: function(){
-			
+			this.showTypeSelection(true);
 		},
 		
 		linkButtonClick: function(){
@@ -160,10 +204,11 @@ var RControl = {
 			if(node!=null) {
 				node.selected = true;
 				this.selectedNode = node;
-				this.view.showLinkButton(true);
+				this.view.showNodeButtons(node.x, node.y);
 			}
 			else {
 				this.selectedNode = null;
+				this.view.hideNodeButtons();
 			}
 		}
 }

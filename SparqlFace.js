@@ -1,7 +1,8 @@
 var SparqlFace = {
-		config: function(objectSuggestCallback, predicateSuggestCallback) {
+		config: function(objectSuggestCallback, predicateSuggestCallback, relatedCallback) {
 			this.objectSuggestionCallback = objectSuggestCallback;
 			this.predicateSuggestionCallback= predicateSuggestCallback;
+			this.relatedCallback = relatedCallback;
 			this.queryService = Object.create(SPARQL);
 			this.queryService.Service(RSettings.sparqlProxy, RSettings.sparqlEndpoint);
 			this.queryService.setMethod('GET');
@@ -15,15 +16,13 @@ var SparqlFace = {
 		nameFromUri: function(uri) {
 			return uri.match("[^\/#]+$");
 		},
-		saveGraph: function(triplesInString) {			
-			
+		saveGraph: function(triplesInString) {						
 			$.ajax("server/save-temp-graph.php"+"?filename=test.ttl", {
 			    data : triplesInString,
 			    contentType : 'text/plain',
 			    type : 'POST',
 			    success: this.clearThenLoad.bind(this)
-			});
-			
+			});			
 		},
 		processObjectSuggestions: function(json) {
 			var results = this.getAllBindings(json, "a");
@@ -33,11 +32,15 @@ var SparqlFace = {
 			var results = this.getAllBindings(json, "a");
 			this.predicateSuggestionCallback(results);			
 		},
+		processRelatedNodes: function(json) {
+			var results = this.getAllBindings(json, "a");
+			this.relatedCallback(results);			
+		},
 		getAllBindings: function(json, placeholder) {
 			var results = [];
 			for(var j=0; j<json.results.bindings.length; j++) {
 				var binding = json.results.bindings[j];
-				results.push(binding["a"].value);
+				results.push(binding[placeholder].value);
 			}			
 			return results;
 		},
@@ -48,19 +51,23 @@ var SparqlFace = {
 			query.query(searchQuery, {failure: function(){alert("Search failed - query failure")}, 
 				success: this.processTextSearch.bind(this)});
 		},
+		runQuery: function(searchQuery, failureMessage, successCallback) {			
+			var query = this.queryService.createQuery();
+			query.query(searchQuery, {failure: function(){alert(failureMessage)}, 
+				success: successCallback});			
+		},
 		getAllEntities: function() {
 			var searchQuery = "SELECT DISTINCT ?a WHERE { {?a ?b ?c} UNION {?x ?y ?a} FILTER(!isLiteral(?a))}";
-			
-			var query = this.queryService.createQuery();
-			query.query(searchQuery, {failure: function(){alert("Getting entity list failed - query failure")}, 
-				success: this.processObjectSuggestions.bind(this)});
+			this.runQuery(searchQuery, "Getting entity list failed - query failure", this.processObjectSuggestions.bind(this));
 		},
 		getAllPredicates: function() {
 			var searchQuery = "SELECT DISTINCT ?a WHERE { {?b ?a ?c} UNION {?x ?a ?y} }";
-			
-			var query = this.queryService.createQuery();
-			query.query(searchQuery, {failure: function(){alert("Getting entity list failed - query failure")}, 
-				success: this.processPredicateSuggestions.bind(this)});
+			this.runQuery(searchQuery, "Getting predicate list failed - query failure", this.processPredicateSuggestions.bind(this));
+		},
+		getRelatedNodes: function(node) {
+			var b = "<"+node.uri+">"
+			var searchQuery = "SELECT DISTINCT ?a WHERE { {?a ?pred "+b+"} UNION {"+b+" ?pred ?a} UNION {?a ?pred1 ?c. ?c ?pred2 "+b+".} UNION {"+b+" ?pred1 ?c. ?c ?pred2 ?a.} }";
+			this.runQuery(searchQuery, "Getting related nodes failed - query failure", this.processRelatedNodes.bind(this));
 		},
 		clearThenLoad: function() {
 			var updateQuery = "CLEAR GRAPH <http://test>";
