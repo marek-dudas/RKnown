@@ -81,9 +81,9 @@ var RView = {
 		    this.createLinkButton();
 		    this.createTypeButton();		    
 			
-			window.addEventListener('resize', this.updateSize.bind(this));
+			//window.addEventListener('resize', this.updateSize.bind(this));
 			
-			$(window).load(this.updateSize.bind(this));
+			//$(window).load(this.updateSize.bind(this));
 		},
 		
 		createLinkButton: function() {
@@ -219,7 +219,7 @@ var RView = {
 			var nodesEnter = this.relatedNodes.enter().append("g")
 	        .classed("node",true)
 	        .attr('transform', function(d) {
-	    		return 'translate( '+x+', '+y+')';
+	    		return 'translate( '+d.x+', '+d.y+')';
 	  		})
 		  	.on("mousedown", function(d){
 		  		  RKnown.control.relatedNodeMouseDown(d);
@@ -355,8 +355,8 @@ var RView = {
 };
 
 Node.getPathData = function() {
-	this.width=90;
-	this.height=40;
+	//this.width=90;
+	//this.height=40;
 	return this.path(this.width, this.height);
 };
 

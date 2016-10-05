@@ -22,6 +22,8 @@ var Node = {
 			if(this.visible == false) return "";
 			var tripleString = "<"+this.uri+"> <http://rknown.com/xcoord> "+this.x+" .";
 			tripleString += "<"+this.uri+"> <http://rknown.com/ycoord> "+this.y+" .";
+			tripleString += "<"+this.uri+"> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> .";
+			
 			return tripleString;
 		},
 		

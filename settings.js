@@ -4,6 +4,6 @@ var RSettings = {
 		sparqlUpdateProxy: "server/sparql-update-proxy.php",
 		sparqlUpdateEndpoint: "http://localhost:8080/openrdf-sesame/repositories/rknown/statements",
 		nodeWidth: 100,
-		nodeHeight: 50,
-		relatedNodesCanvasWidth: 300
+		nodeHeight: 40,
+		relatedNodesCanvasWidth: 320
 }

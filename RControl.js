@@ -42,7 +42,7 @@ var RControl = {
 		
 		addRelatedNodes: function(strings) {
 			var x=RSettings.nodeWidth/2;
-			var y=RSettings.nodeHeight/2;
+			var y=RSettings.nodeHeight;
 			if(this.relatedNodes.length>0) {
 				x = this.relatedNodes[this.relatedNodes.length-1].x+RSettings.nodeWidth;
 				y = this.relatedNodes[this.relatedNodes.length-1].y+RSettings.nodeHeight;
@@ -55,6 +55,8 @@ var RControl = {
 				var node = Object.create(Node);
 				var nodeUri = strings[i];
 				node.init(nodeUri, SparqlFace.nameFromUri(nodeUri));
+				node.x=x;
+				node.y=y;
 				x+=RSettings.nodeWidth;
 				this.relatedNodes.push(node);
 			}
@@ -62,7 +64,8 @@ var RControl = {
 		},
 		
 		relatedNodeMouseDown: function(node) {
-			this.view.setDraggedNode(node.copy());
+			this.relatedNode = node.copy();
+			this.view.setDraggedNode(this.relatedNode);
 		},
 		
 		fillInputField: function(strings) {
