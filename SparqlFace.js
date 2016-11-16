@@ -16,6 +16,11 @@ var SparqlFace = {
 		nameFromUri: function(uri) {
 			return uri.match("[^\/#]+$");
 		},
+		query: function(queryText, callback) {
+			var query = this.queryService.createQuery();
+			query.query(queryText, {failure: function(){alert("Query failed:"+queryText)}, 
+				success: callback});
+		},
 		saveGraph: function(triplesInString) {						
 			$.ajax("server/save-temp-graph.php"+"?filename=test.ttl", {
 			    data : triplesInString,
@@ -23,6 +28,53 @@ var SparqlFace = {
 			    type : 'POST',
 			    success: this.clearThenLoad.bind(this)
 			});			
+		},
+		loadGraph: function(user, graph, callback) {
+			this.loadGraphCallback = callback;
+			this.currentGraph = graph;
+			var query = "SELECT DISTINCT ?a ?x ?y FROM <" + graph + "> WHERE {" +
+					"?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> ;" +
+					"	<http://rknown.com/xcoord> ?x ;" +
+					"	<http://rknown.com/ycoord> ?y .}";
+			this.query(query, this.saveObjectsAndContinue.bind(this));
+		},
+		saveLinksAndContinue: function(json) {
+			this.links = [];
+			for(var j=0; j<json.results.bindings.length; j++) {
+				var binding = json.results.bindings[j];
+				var linkUri =  binding["link"].value;
+				var startUri =  binding["a"].value;
+				var endUri =  binding["b"].value;
+				var start = null;
+				var end = null;
+				for(var i=0; i<this.objects.length; i++) {
+					if(this.objects[i].uri==startUri) start = this.objects[i];
+					if(this.objects[i].uri==endUri) end = this.objects[i];
+				}
+				if(start!=null && end!=null) {
+					var link = Object.create(Link);
+					link.init(start, end, linkUri, this.nameFromUri(linkUri));
+					this.links.push(link);
+				}
+			}
+			this.loadGraphCallback(this.objects, this.links);
+		},
+		saveObjectsAndContinue: function(json) {
+			this.objects = [];
+			for(var j=0; j<json.results.bindings.length; j++) {
+				var binding = json.results.bindings[j];
+				var object = Object.create(Node);
+				var objUri = binding["a"].value;
+				object.init(objUri, this.nameFromUri(objUri));
+				object.x = parseFloat(binding["x"].value);
+				object.y = parseFloat(binding["y"].value);
+				this.objects.push(object);
+			}
+			var query = "SELECT ?a ?link ?b FROM <"+ this.currentGraph +"> WHERE {" +
+					"?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> ." +
+					"?b <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> ." +
+					"?a ?link ?b . }";
+			this.query(query, this.saveLinksAndContinue.bind(this))
 		},
 		processObjectSuggestions: function(json) {
 			var results = this.getAllBindings(json, "a");
@@ -43,6 +95,10 @@ var SparqlFace = {
 				results.push(binding[placeholder].value);
 			}			
 			return results;
+		},
+		getGraphs: function(callback) {
+			var query = "SELECT DISTINCT ?graph WHERE { graph ?graph {?s ?p ?o.}}";
+			this.runQuery(query, "Getting graphs failed.", function(json){callback(SparqlFace.getAllBindings(json, "graph"))})
 		},
 		textSearch: function(text) {
 			var searchQuery = "SELECT ?a WHERE { {?a ?b ?c} UNION {?x ?y ?a} FILTER(contains(?a, \" "+text+"\")) }";

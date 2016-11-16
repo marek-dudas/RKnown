@@ -18,6 +18,8 @@ var RView = {
 		    	.attr("height", height);
 		    
 		    this.relatedNodes = this.relatedSvg.append("svg:g").selectAll("g");
+		    
+		    this.graphs = d3.select("#graphs").selectAll("p");
 			    
 			this.svg = this.viewingElement
 				.append("svg")
@@ -84,6 +86,14 @@ var RView = {
 			//window.addEventListener('resize', this.updateSize.bind(this));
 			
 			//$(window).load(this.updateSize.bind(this));
+		},
+		
+		updateGraphList: function() {
+			this.graphs = this.graphs.data(RKnown.control.graphs);
+			this.graphs.enter().append("p").append("a")
+				.attr("href", "#")
+				.text(function(d) {return d.uri;})
+				.on("click", function(d) {RKnown.control.loadGraph(d.uri);});
 		},
 		
 		createLinkButton: function() {

@@ -38,6 +38,30 @@ var RControl = {
 			});
 			
 			d3.select('#btnSave').on('click', this.save.bind(this));
+			
+			SparqlFace.getGraphs(this.setGraphs.bind(this));
+		},
+		
+		setGraphs: function(graphs) {
+			this.graphs = [];
+			for(var i=0; i<graphs.length; i++) this.graphs.push({uri:graphs[i], id:graphs[i]});
+			this.view.updateGraphList();
+		},
+		
+		loadGraph: function(graphUri) {
+			SparqlFace.loadGraph(null, graphUri, this.showGraph.bind(this));
+		},
+		
+		showGraph: function(nodes, links) {
+			this.model.empty();
+			this.view.updateView();			
+			this.model = Object.create(RModel);
+			this.model.init();
+			for(var i=0; i<nodes.length; i++) this.model.addNode(nodes[i]);
+			for(var i=0; i<links.length; i++) this.model.addLink(links[i]);
+			RKnown.model = this.model;
+			this.view.setData(this.model);
+			this.view.updateView();
 		},
 		
 		addRelatedNodes: function(strings) {
