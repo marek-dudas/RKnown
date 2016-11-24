@@ -58,6 +58,9 @@ var RView = {
 		    this.rootSvg = this.svg;	
 		    
 		    this.rootSvg.on("mousemove", function() {RKnown.control.mouseMove(d3.mouse(this));});
+		    this.rootSvg.on("click", function() {
+		    	var mouseDown = RKnown.control.canvasMouseDown.bind(RKnown.control);
+		    	mouseDown(d3.mouse(this), null);})
 		    
 		    
 		    this.svg = this.svg.append("svg:g");
@@ -324,6 +327,7 @@ var RView = {
 			    var nodesEnter = this.nodes.enter().append("g")
 			        .on("click", function(d){
 			        	RKnown.control.canvasMouseDown(d3.mouse(this), d);
+			        	d3.event.stopPropagation();
 			        	})
 			        .on('dblclick', function(d){
 					     RKnown.control.nodeDblClick(d);

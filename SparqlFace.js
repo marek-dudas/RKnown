@@ -127,7 +127,7 @@ var SparqlFace = {
 			this.runQuery(searchQuery, "Getting related nodes failed - query failure", this.processRelatedNodes.bind(this));
 		},
 		clearThenLoad: function() {
-			var updateQuery = "CLEAR GRAPH <http://test>";
+			var updateQuery = "CLEAR GRAPH <"+ this.currentGraph +">";
 			
 			$.get("server/sesame-proxy.php?query="+encodeURIComponent(updateQuery), null, this.runLoadQuery.bind(this));
 				
@@ -138,9 +138,9 @@ var SparqlFace = {
 		},
 		runLoadQuery: function() {
 			var query = this.updateService.createQuery();	
-			var updateQuery = "LOAD <http://localhost/rknown/server/test.ttl> INTO GRAPH <http://test>"
+			var updateQuery = "LOAD <http://localhost/rknown/server/test.ttl> INTO GRAPH <"+ this.currentGraph +">"
 				
-			$.get("server/sesame-proxy.php?query="+encodeURIComponent(updateQuery));
+			$.get("server/sesame-proxy.php?query="+encodeURIComponent(updateQuery), null, this.graphSavedCallback);
 				
 			/*query.query(updateQuery, {failure: function(){alert("Saving graph failed - query failure")}, 
 				success: function(json) {

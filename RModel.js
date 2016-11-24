@@ -108,7 +108,7 @@ var RModel = {
  
 		removeLink: function(link) {
 			this.links.splice(this.links.indexOf(link),1);
-			this.updateBTypeLevels();
+			//this.updateBTypeLevels();
 		},
 
 		empty: function() {

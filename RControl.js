@@ -1,9 +1,10 @@
 var RControl = {
-		init: function(model, inputFieldId) {
+		init: function(model, inputFieldId, modelFieldId) {
 			this.model = model;
 			this.linkStart = null;
 			this.selectedNode = null;
 			this.blankNode = null;
+			this.modelFieldId = '#'+modelFieldId;
 			this.inputFieldId = '#'+inputFieldId;
 			this.predicateInputFieldId = '#newPredicateField';
 			this.typeInputFielId = '#typeField';
@@ -39,6 +40,10 @@ var RControl = {
 			
 			d3.select('#btnSave').on('click', this.save.bind(this));
 			
+			this.showAllGraphs();
+		},
+		
+		showAllGraphs: function() {
 			SparqlFace.getGraphs(this.setGraphs.bind(this));
 		},
 		
@@ -49,6 +54,7 @@ var RControl = {
 		},
 		
 		loadGraph: function(graphUri) {
+			$(this.modelFieldId).val(SparqlFace.nameFromUri(graphUri));
 			SparqlFace.loadGraph(null, graphUri, this.showGraph.bind(this));
 		},
 		
@@ -105,6 +111,9 @@ var RControl = {
 		},
 		
 		save: function() {
+			this.model.name = "http://test/"+($(this.modelFieldId).val());
+			SparqlFace.currentGraph = this.model.name;
+			SparqlFace.graphSavedCallback = this.showAllGraphs.bind(this);
 			SparqlFace.saveGraph(this.model.getRdf())
 		},
 
@@ -168,12 +177,18 @@ var RControl = {
 		},
 		
 		canvasMouseDown: function(location, node) {
-			if(this.linkStart != null) {
+			if(this.linkStart != null && node!=null) {
 				this.creationLink.setEnd(node);
 				this.linkStart = null;
 				this.selectedNode.selected = false;
 				this.selectedNode = null;
 				this.showPredicateSelection(true);
+			}
+			else if(this.linkStart != null) {
+				this.linkStart = null;
+				this.selectedNode.selected = false;
+				this.selectedNode = null;
+				this.model.removeLink(this.creationLink);
 			}
 			this.selectNode(node, d3.event.shiftKey);
 			this.view.updateView();
@@ -203,6 +218,7 @@ var RControl = {
 		
 		typeButtonClick: function(){
 			this.showTypeSelection(true);
+			d3.event.stopPropagation();
 		},
 		
 		linkButtonClick: function(){
@@ -220,6 +236,7 @@ var RControl = {
 				this.creationLink.init(this.linkStart, this.blankNode, "", "");
 				this.model.addLink(this.creationLink);
 			}
+			d3.event.stopPropagation();
 		},
 		
 		selectNode: function(node, noDeselectFirst) {
