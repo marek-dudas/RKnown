@@ -35,7 +35,8 @@ var SparqlFace = {
 			var query = "SELECT DISTINCT ?a ?x ?y FROM <" + graph + "> WHERE {" +
 					"?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> ;" +
 					"	<http://rknown.com/xcoord> ?x ;" +
-					"	<http://rknown.com/ycoord> ?y .}";
+					"	<http://rknown.com/ycoord> ?y ;" +
+					"	<http://www.w3.org/2000/01/rdf-schema#label> ?label .}";
 			this.query(query, this.saveObjectsAndContinue.bind(this));
 		},
 		saveLinksAndContinue: function(json) {
@@ -65,7 +66,8 @@ var SparqlFace = {
 				var binding = json.results.bindings[j];
 				var object = Object.create(Node);
 				var objUri = binding["a"].value;
-				object.init(objUri, this.nameFromUri(objUri));
+				var name = binding["label"].value;
+				object.init(objUri, name);
 				object.x = parseFloat(binding["x"].value);
 				object.y = parseFloat(binding["y"].value);
 				this.objects.push(object);
@@ -100,12 +102,25 @@ var SparqlFace = {
 			var query = "SELECT DISTINCT ?graph WHERE { graph ?graph {?s ?p ?o.}}";
 			this.runQuery(query, "Getting graphs failed.", function(json){callback(SparqlFace.getAllBindings(json, "graph"))})
 		},
-		textSearch: function(text) {
-			var searchQuery = "SELECT ?a WHERE { {?a ?b ?c} UNION {?x ?y ?a} FILTER(contains(?a, \" "+text+"\")) }";
+		textSearch: function(text,callback) {
+			this.textSearchCallback = callback;
+			var searchQuery = "SELECT ?a ?label WHERE { ?a <http://www.w3.org/2000/01/rdf-schema#label> ?label FILTER(contains(?a, \""+text+"\") || contains(?label, \""+text+"\")) }";
 			
 			var query = this.queryService.createQuery();
 			query.query(searchQuery, {failure: function(){alert("Search failed - query failure")}, 
 				success: this.processTextSearch.bind(this)});
+		},
+		processTextSearch: function(json) {
+			this.objects = [];
+			for(var j=0; j<json.results.bindings.length; j++) {
+				var binding = json.results.bindings[j];
+				var object = Object.create(Node);
+				var objUri = binding["a"].value;
+				var objName = binding["label"].value;
+				object.init(objUri, objName);
+				this.objects.push(object);
+			}
+			this.textSearchCallback(this.objects);
 		},
 		runQuery: function(searchQuery, failureMessage, successCallback) {			
 			var query = this.queryService.createQuery();

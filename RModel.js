@@ -20,9 +20,10 @@ var Node = {
 		
 		triplify: function() {
 			if(this.visible == false) return "";
-			var tripleString = "<"+this.uri+"> <http://rknown.com/xcoord> "+this.x+" .";
-			tripleString += "<"+this.uri+"> <http://rknown.com/ycoord> "+this.y+" .";
-			tripleString += "<"+this.uri+"> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> .";
+			var tripleString = "<"+this.uri+"> <http://rknown.com/xcoord> "+this.x+" . ";
+			tripleString += "<"+this.uri+"> <http://rknown.com/ycoord> "+this.y+" . ";
+			tripleString += "<"+this.uri+"> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> . ";
+			tripleString += "<"+this.uri+"> <http://www.w3.org/2000/01/rdf-schema#label> \""+this.name+"\" . ";
 			
 			return tripleString;
 		},
@@ -31,6 +32,10 @@ var Node = {
 			var nodeCopy = Object.create(Node);
 			nodeCopy.init(this.uri, this.name);
 			return nodeCopy;
+		},
+		
+		getComment: function() {
+			return "this is some entity";
 		}
 		
 } 

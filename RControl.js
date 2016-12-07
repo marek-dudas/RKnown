@@ -7,18 +7,23 @@ var RControl = {
 			this.modelFieldId = '#'+modelFieldId;
 			this.inputFieldId = '#'+inputFieldId;
 			this.predicateInputFieldId = '#newPredicateField';
-			this.typeInputFielId = '#typeField';
+			this.c = '#typeField';
 			this.creationLink = null;
 			this.relatedNodes = [];
 			SparqlFace.config(this.fillInputField.bind(this), this.fillPredicateField.bind(this), this.addRelatedNodes.bind(this));
-			SparqlFace.getAllEntities();
-			SparqlFace.getAllPredicates();
+			//SparqlFace.getAllEntities();
+			//SparqlFace.getAllPredicates();
 			
 			$(this.inputFieldId).bind("enterKey", this.addEntityFromTextField.bind(this));
 			$(this.inputFieldId).keyup(function(e){
 			    if(e.keyCode == 13)
 			    {
 			        $(this).trigger("enterKey");
+			    }
+			    else {
+			    	d3.select("#suggestionsWidget").style("left", $(this).position().left+"px")
+			    		.style("top", ($(this).position().top + $(this).outerHeight()) + "px");
+			    	RKnown.control.updateSuggestions($(this).val());
 			    }
 			});
 			
@@ -41,6 +46,10 @@ var RControl = {
 			d3.select('#btnSave').on('click', this.save.bind(this));
 			
 			this.showAllGraphs();
+		},
+		
+		updateSuggestions: function(text) {
+			SparqlFace.textSearch(text, function(objects){RKnown.view.updateSuggestions(objects);})
 		},
 		
 		showAllGraphs: function() {
@@ -157,10 +166,20 @@ var RControl = {
 			
 		},
 		
-		addEntityFromTextField: function() {
+		getEntityUriBase: function() {
+			return RSettings.uriBase;
+		},
+		
+		addEntityFromTextField: function() {	
+			var name = $(this.inputFieldId).val();
+			var localUri = name.replace(/[^a-zA-Z0-9]/g, "");
+			var nodeUri = this.getEntityUriBase()+localUri;
+			this.addEntity(nodeUri, name);
+		},
+		
+		addEntity: function(uri, name) {
 			var node = Object.create(Node);
-			var nodeUri = $(this.inputFieldId).val();
-			node.init(nodeUri, SparqlFace.nameFromUri(nodeUri));
+			node.init(uri, name);
 			node.x = 100;
 			node.y = 100;
 			this.model.addNode(node);

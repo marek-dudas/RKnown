@@ -5,5 +5,6 @@ var RSettings = {
 		sparqlUpdateEndpoint: "http://localhost:8080/openrdf-sesame/repositories/rknown/statements",
 		nodeWidth: 100,
 		nodeHeight: 40,
-		relatedNodesCanvasWidth: 320
+		relatedNodesCanvasWidth: 320,
+		uriBase: "http://rknown.com/data/"
 }

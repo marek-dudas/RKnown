@@ -20,6 +20,7 @@ var RView = {
 		    this.relatedNodes = this.relatedSvg.append("svg:g").selectAll("g");
 		    
 		    this.graphs = d3.select("#graphs").selectAll("p");
+			this.suggestions = d3.select("#suggestionTable").selectAll("tr");
 			    
 			this.svg = this.viewingElement
 				.append("svg")
@@ -255,6 +256,21 @@ var RView = {
 		 this.nodes.selectAll(".nodename").text(function(d) {return d.name;});
 		 
 		 this.relatedNodes.exit().remove();
+		},
+		
+		updateSuggestions: function(data) {
+			this.suggestions = this.suggestions.data(data, function(d){return d.uri});
+			var suggestionsEnter = this.suggestions.enter().append("tr");
+			suggestionsEnter.append("td").append("a")
+				.attr("href", "#")
+				.text(function(d) {return d.name;})
+				.on("click", function(d) {
+					RKnown.control.addEntity(d.uri, d.name);
+					d3.select("#suggestionsWidget").style("visibility", "hidden");
+					});
+			suggestionsEnter.append("td").text(function(d) {d.getComment();})
+			this.suggestions.exit().remove();
+			d3.select("#suggestionsWidget").style("visibility", "visible");
 		},
 		
 		updateView: function() {
