@@ -8,6 +8,7 @@ var Node = {
 			this.typeNode = false;
 			this.width = RSettings.nodeWidth;
 			this.height = RSettings.nodeHeight;
+			this.valuations = [];
 		},
 		
 		setTypeNode: function() {
@@ -25,6 +26,12 @@ var Node = {
 			tripleString += "<"+this.uri+"> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> . ";
 			tripleString += "<"+this.uri+"> <http://www.w3.org/2000/01/rdf-schema#label> \""+this.name+"\" . ";
 			
+			for(var i=0; i<this.valuations.length; i++) {
+				tripleString += "<"+this.uri+"> <"+this.valuations[i].predicate.uri+"> \""+this.valuations[i].value+"\" .";
+				tripleString += "<"+this.valuations[i].predicate.uri+"> <http://www.w3.org/2000/01/rdf-schema#label> \""+this.valuations[i].predicate.name+"\" ;" +
+						"				<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DataProperty> .";
+			}
+			
 			return tripleString;
 		},
 		
@@ -36,9 +43,26 @@ var Node = {
 		
 		getComment: function() {
 			return "this is some entity";
+		},
+		
+		addValuation: function(valuation) {
+			this.valuations.push(valuation);
 		}
 		
 } 
+
+var Valuation = {
+		setPredicate: function(node) {
+			this.predicate = node;
+		},
+		setValue: function(value) {
+			this.value = value;
+		},
+		init: function(predicate, value) {
+			this.predicate = predicate;
+			this.value = value;
+		}
+}
 
 var Triple = {
 		init: function(subject, predicate, object) {
@@ -70,7 +94,11 @@ var Link = {
 			this.uri = uri;
 		},
 		triplify: function() {
-			return Triple.create(this.start.uri, this.uri, this.end.uri).str();
+			var triples = Triple.create(this.start.uri, this.uri, this.end.uri).str();
+			triples += Triple.create(this.uri, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+					"http://www.w3.org/2002/07/owl#ObjectProperty").str();
+			triples += "<"+this.uri+"> <http://www.w3.org/2000/01/rdf-schema#label> \""+this.name+"\" .";
+			return triples;
 		},
 		setEnd: function(end) {
 			this.end = end;
@@ -78,7 +106,9 @@ var Link = {
 		},
 		setUri: function(uri) {
 			this.uri = uri;
-			this.name = SparqlFace.nameFromUri(uri);
+		},
+		setName: function(name){
+			this.name = name;
 		},
 		dashed: function() {
 			return "";

@@ -32,7 +32,7 @@ var SparqlFace = {
 		loadGraph: function(user, graph, callback) {
 			this.loadGraphCallback = callback;
 			this.currentGraph = graph;
-			var query = "SELECT DISTINCT ?a ?x ?y FROM <" + graph + "> WHERE {" +
+			var query = "SELECT DISTINCT * FROM <" + graph + "> WHERE {" +
 					"?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> ;" +
 					"	<http://rknown.com/xcoord> ?x ;" +
 					"	<http://rknown.com/ycoord> ?y ;" +
@@ -58,8 +58,39 @@ var SparqlFace = {
 					this.links.push(link);
 				}
 			}
+			
+			var query = "SELECT DISTINCT * FROM <" +this.currentGraph+"> WHERE {" +
+					"?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> ;" +
+					"	?predicate ?value ." +
+					"?predicate <http://www.w3.org/2000/01/rdf-schema#label> ?label . " +
+					"FILTER(?predicate != <http://rknown.com/xcoord> && ?predicate != <http://rknown.com/ycoord> && ?predicate != <http://www.w3.org/2000/01/rdf-schema#label>)" +
+					"FILTER(isLiteral(?value))" +
+					"}";
+			
+			this.query(query, this.saveLiteralsAndContinue.bind(this));
+			
+		},
+		saveLiteralsAndContinue: function(json) {
+			for(var j=0; j<json.results.bindings.length; j++) {
+				var binding = json.results.bindings[j];
+				var predicate = Object.create(Node);
+				var valuation = Object.create(Valuation);
+				var objUri = binding["a"].value;
+				var predicateName = binding["label"].value;
+				var predicateUri = binding["predicate"].value;
+				var value = binding["value"].value;
+				predicate.init(predicateUri, predicateName);
+				valuation.setPredicate(predicate);
+				valuation.setValue(value);
+				for(var i=0; i<this.objects.length; i++) {
+					if(this.objects[i].uri == objUri) {
+						this.objects[i].addValuation(valuation);
+					}
+				}
+			}
 			this.loadGraphCallback(this.objects, this.links);
 		},
+		
 		saveObjectsAndContinue: function(json) {
 			this.objects = [];
 			for(var j=0; j<json.results.bindings.length; j++) {
@@ -102,9 +133,12 @@ var SparqlFace = {
 			var query = "SELECT DISTINCT ?graph WHERE { graph ?graph {?s ?p ?o.}}";
 			this.runQuery(query, "Getting graphs failed.", function(json){callback(SparqlFace.getAllBindings(json, "graph"))})
 		},
-		textSearch: function(text,callback) {
+		textSearch: function(text, type, callback) {
 			this.textSearchCallback = callback;
-			var searchQuery = "SELECT ?a ?label WHERE { ?a <http://www.w3.org/2000/01/rdf-schema#label> ?label FILTER(contains(?a, \""+text+"\") || contains(?label, \""+text+"\")) }";
+			var searchQuery = "SELECT ?a ?label WHERE " +
+					"{ ?a <http://www.w3.org/2000/01/rdf-schema#label> ?label ." +
+					"  ?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> "+type+" . " +
+					" FILTER(contains(?a, \""+text+"\") || contains(?label, \""+text+"\")) }";
 			
 			var query = this.queryService.createQuery();
 			query.query(searchQuery, {failure: function(){alert("Search failed - query failure")}, 

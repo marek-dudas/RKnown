@@ -85,8 +85,10 @@ var RView = {
 		    this.canvas = this.svg.append("svg:g");
 		    
 		    this.createLinkButton();
-		    this.createTypeButton();		    
-			
+		    this.createTypeButton();
+		    this.createLiteralButton();
+		    
+		    
 			//window.addEventListener('resize', this.updateSize.bind(this));
 			
 			//$(window).load(this.updateSize.bind(this));
@@ -98,6 +100,27 @@ var RView = {
 				.attr("href", "#")
 				.text(function(d) {return d.uri;})
 				.on("click", function(d) {RKnown.control.loadGraph(d.uri);});
+		},
+		
+		showLiteralInput: function(node) {
+			d3.select('#literalInput').style("visibility", "visible")
+			.style("left", node.x+"px")
+			.style("top", (node.y+120)+"px");
+			
+			d3.select('#saveLiteral').on('click', RKnown.control.addLiteralButtonClick.bind(RKnown.control));
+			
+		},
+
+		createLiteralButton: function() {
+			var arc = d3.svg.symbol().type('triangle-up');
+
+			this.literalButton = this.canvas.append('path')
+			.attr('d',arc)
+			.attr('fill', '#a00')
+			.attr('stroke','#000')
+			.attr('stroke-width',1)
+			.style("visibility", "hidden")
+			.on("click", RKnown.control.literalButtonClick.bind(RKnown.control));
 		},
 		
 		createLinkButton: function() {
@@ -135,6 +158,8 @@ var RView = {
 			this.linkButton.style("visibility", "visible");
 			this.typeButton.attr('transform', "translate("+(x-30)+","+(y-30)+")");
 			this.typeButton.style("visibility", "visible");
+			this.literalButton.attr('transform', "translate("+(x-60)+","+(y-30)+")");
+			this.literalButton.style("visibility", "visible");
 		},
 		
 		hideNodeButtons: function() {
@@ -270,7 +295,39 @@ var RView = {
 					});
 			suggestionsEnter.append("td").text(function(d) {d.getComment();})
 			this.suggestions.exit().remove();
-			d3.select("#suggestionsWidget").style("visibility", "visible");
+			if(data.length>0) d3.select("#suggestionsWidget").style("visibility", "visible");
+			else d3.select("#suggestionsWidget").style("visibility", "hidden");
+		},
+		
+		updatePropSuggestions: function(data) {
+			this.suggestions = this.suggestions.data(data, function(d){return d.uri});
+			var suggestionsEnter = this.suggestions.enter().append("tr");
+			suggestionsEnter.append("td").append("a")
+				.attr("href", "#")
+				.text(function(d) {return d.name;})
+				.on("click", function(d) {
+					RKnown.control.predicateSelected(d);
+					/*RKnown.control.creationLink.setUri(d.uri);
+					RKnown.control.creationLink.setName(d.name);*/
+					d3.select("#suggestionsWidget").style("visibility", "hidden");
+					RKnown.control.showPredicateSelection(false);
+					});
+			this.suggestions.exit().remove();
+			if(data.length>0) d3.select("#suggestionsWidget").style("visibility", "visible");
+			else d3.select("#suggestionsWidget").style("visibility", "hidden");
+		},
+		
+		showNodeProperties: function(node) {
+			d3.select('#propertiesWidget').style("visibility", "visible")
+				.style("left", node.x+"px")
+				.style("top", (node.y-120)+"px");
+			d3.select('#propertiesTable').selectAll('tr').remove();
+			var valuations = d3.select('#propertiesTable').selectAll('tr');
+			valuations = valuations.data(node.valuations);
+			lines = valuations.enter()
+				.append('tr');
+			lines.append('td').text(function(d){return d.predicate.name;});
+			lines.append('td').text(function(d){return d.value});
 		},
 		
 		updateView: function() {

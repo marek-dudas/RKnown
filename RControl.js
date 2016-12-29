@@ -9,7 +9,9 @@ var RControl = {
 			this.predicateInputFieldId = '#newPredicateField';
 			this.c = '#typeField';
 			this.creationLink = null;
+			this.addingLiteral = false;
 			this.relatedNodes = [];
+			this.creationPredicate = null;
 			SparqlFace.config(this.fillInputField.bind(this), this.fillPredicateField.bind(this), this.addRelatedNodes.bind(this));
 			//SparqlFace.getAllEntities();
 			//SparqlFace.getAllPredicates();
@@ -21,9 +23,12 @@ var RControl = {
 			        $(this).trigger("enterKey");
 			    }
 			    else {
-			    	d3.select("#suggestionsWidget").style("left", $(this).position().left+"px")
-			    		.style("top", ($(this).position().top + $(this).outerHeight()) + "px");
-			    	RKnown.control.updateSuggestions($(this).val());
+			    	if($(this).val()!="") {
+				    	d3.select("#suggestionsWidget").style("left", $(this).position().left+"px")
+				    		.style("top", ($(this).position().top + $(this).outerHeight()) + "px");
+				    	SparqlFace.textSearch($(this).val(), "<http://rknown.com/RKnownObject>", RKnown.view.updateSuggestions.bind(RKnown.view));
+			    	}
+			    	else d3.select("#suggestionsWidget").style("visibility", "hidden");
 			    }
 			});
 			
@@ -33,7 +38,20 @@ var RControl = {
 			    {
 			        $(this).trigger("enterKey");
 			    }
+			    else {
+			    	if($(this).val() != "") {
+				    	d3.select("#suggestionsWidget").style("left", $(this).parent().position().left+"px")
+				    		.style("top", ($(this).position().top + $(this).parent().outerHeight()) + "px");
+						SparqlFace.textSearch($(this).val(), "<http://www.w3.org/2002/07/owl#ObjectProperty>", RKnown.view.updatePropSuggestions.bind(RKnown.view))
+			    	}
+			    }
 			});
+			
+			$('#literalPredicateField').keyup(function(e){
+				d3.select("#suggestionsWidget").style("left", $(this).parent().position().left+"px")
+				    		.style("top", ($(this).position().top + $(this).parent().outerHeight())*2 + "px");
+						SparqlFace.textSearch($(this).val(), "<http://www.w3.org/2002/07/owl#DataProperty>", RKnown.view.updatePropSuggestions.bind(RKnown.view))
+			})
 			
 			$(this.typeInputFielId).bind("enterKey", this.setTypeFromField.bind(this));
 			$(this.typeInputFielId).keyup(function(e){
@@ -48,8 +66,8 @@ var RControl = {
 			this.showAllGraphs();
 		},
 		
-		updateSuggestions: function(text) {
-			SparqlFace.textSearch(text, function(objects){RKnown.view.updateSuggestions(objects);})
+		updateSuggestions: function(text, type) {
+			SparqlFace.textSearch(text, type, function(objects){RKnown.view.updateSuggestions(objects);})
 		},
 		
 		showAllGraphs: function() {
@@ -77,6 +95,20 @@ var RControl = {
 			RKnown.model = this.model;
 			this.view.setData(this.model);
 			this.view.updateView();
+		},
+		
+		addLiteralButtonClick: function() {
+			var newValuation = Object.create(Valuation);
+			if(this.creationPredicate == null || this.creationPredicate.name!=$('#literalPredicateField').val()) {
+				this.creationPredicate = Object.create(Node);
+				this.creationPredicate.init(this.createUriFromName($('#literalPredicateField').val()),$('#literalPredicateField').val());
+			}
+			newValuation.setPredicate(this.creationPredicate);
+			newValuation.setValue($('#literalValue').val());
+			this.selectedNode.addValuation(newValuation);
+			d3.select('#literalInput').style("visibility", "hidden");
+			this.creationPredicate = null;
+			this.showPredicateSelection(false);
 		},
 		
 		addRelatedNodes: function(strings) {
@@ -134,6 +166,17 @@ var RControl = {
 			d3.select('#predicateSelection').style("visibility", visible?"visible":"hidden");
 		},
 		
+		predicateSelected: function(predicate) {
+			if(this.creationLink != null) {
+				this.creationLink.setUri(predicate.uri);
+				this.creationLink.setName(predicate.name);
+			}
+			if(this.addingLiteral) {
+				$('#literalPredicateField').val(predicate.name);
+				this.creationPredicate = predicate;
+			}
+		},
+		
 		showTypeSelection: function(visible) {
 			if(this.selectedNode!=null) {
 				d3.select('#typeSelection').style("left", this.selectedNode.x+30)
@@ -143,15 +186,16 @@ var RControl = {
 		},
 		
 		setPredicateNameFromField: function() {
-			this.creationLink.setUri($(this.predicateInputFieldId).val());
+			this.creationLink.setUri(this.createUriFromName($(this.predicateInputFieldId).val()));
+			this.creationLink.setName($(this.predicateInputFieldId).val());
 			this.showPredicateSelection(false);
 			this.view.updateView();
 		},
 		
 		setTypeFromField: function() {
 			var node = Object.create(Node);
-			var nodeUri = $(this.typeInputFielId).val();
-			node.init(nodeUri, SparqlFace.nameFromUri(nodeUri));
+			var nodeName = $(this.typeInputFielId).val();
+			node.init(this.createUriFromName(nodeName), nodeName);
 			node.x = this.selectedNode.x-1;
 			node.y = this.selectedNode.y-100;
 			node.setTypeNode();
@@ -170,11 +214,14 @@ var RControl = {
 			return RSettings.uriBase;
 		},
 		
-		addEntityFromTextField: function() {	
-			var name = $(this.inputFieldId).val();
+		createUriFromName: function(name) {
 			var localUri = name.replace(/[^a-zA-Z0-9]/g, "");
-			var nodeUri = this.getEntityUriBase()+localUri;
-			this.addEntity(nodeUri, name);
+			return this.getEntityUriBase()+localUri;
+		},
+		
+		addEntityFromTextField: function() {	
+			var name = $(this.inputFieldId).val();			
+			this.addEntity(this.createUriFromName(name), name);
 		},
 		
 		addEntity: function(uri, name) {
@@ -210,6 +257,7 @@ var RControl = {
 				this.model.removeLink(this.creationLink);
 			}
 			this.selectNode(node, d3.event.shiftKey);
+			if(node==null) d3.select('#propertiesWidget').style("visibility", "hidden");
 			this.view.updateView();
 		},
 		
@@ -225,6 +273,7 @@ var RControl = {
 				this.selectNode(node, false);
 				this.view.showNodeButtons(this.selectedNode.x+60, this.selectedNode.y);
 				this.view.updateView();
+				this.view.showNodeProperties(node);
 			}
 		},
 		
@@ -237,6 +286,11 @@ var RControl = {
 		
 		typeButtonClick: function(){
 			this.showTypeSelection(true);
+			d3.event.stopPropagation();
+		},
+		
+		literalButtonClick: function() {
+			this.view.showLiteralInput(this.selectedNode);
 			d3.event.stopPropagation();
 		},
 		
