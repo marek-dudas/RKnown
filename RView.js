@@ -165,6 +165,7 @@ var RView = {
 		hideNodeButtons: function() {
 			this.linkButton.style("visibility", "hidden");
 			this.typeButton.style("visibility", "hidden");
+			this.literalButton.style("visibility", "hidden");
 		},			
 		
 		zoomHandler: function () {
@@ -319,14 +320,15 @@ var RView = {
 		
 		showNodeProperties: function(node) {
 			d3.select('#propertiesWidget').style("visibility", "visible")
-				.style("left", node.x+"px")
-				.style("top", (node.y-120)+"px");
+				.style("left", d3.mouse(d3.select("body").node())[0]+"px")
+				.style("top", d3.mouse(d3.select("body").node())[1]+30+"px");
 			d3.select('#propertiesTable').selectAll('tr').remove();
 			var valuations = d3.select('#propertiesTable').selectAll('tr');
 			valuations = valuations.data(node.valuations);
 			lines = valuations.enter()
 				.append('tr');
-			lines.append('td').text(function(d){return d.predicate.name;});
+			lines.append('td').text(function(d){return d.predicate.name;})
+				.on('mouseover', function(d){RKnown.control.valuationMouseOver(d);})
 			lines.append('td').text(function(d){return d.value});
 		},
 		

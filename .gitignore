@@ -53,3 +53,5 @@ target/
 .project
 .buildpath
 .tern-project
+
+bs/

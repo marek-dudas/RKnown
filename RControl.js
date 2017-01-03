@@ -257,8 +257,18 @@ var RControl = {
 				this.model.removeLink(this.creationLink);
 			}
 			this.selectNode(node, d3.event.shiftKey);
-			if(node==null) d3.select('#propertiesWidget').style("visibility", "hidden");
+			if(node==null) {
+				d3.selectAll('.popover').style("visibility", "hidden");
+			}
 			this.view.updateView();
+		},
+		
+		valuationMouseOver: function(valuation) {
+			if(valuation.value.startsWith('http')) {
+				d3.select('#webInfo').style("visibility", "visible");
+				d3.select('#webFrame').attr('src', valuation.value);
+			}
+			else d3.select('#webInfo').style("visibility", "hidden");
 		},
 		
 		putRelatedNode: function(location) {
