@@ -24,11 +24,11 @@ var RControl = {
 			    }
 			    else {
 			    	if($(this).val()!="") {
-				    	d3.select("#suggestionsWidget").style("left", $(this).position().left+"px")
-				    		.style("top", ($(this).position().top + $(this).outerHeight()) + "px");
+				    	d3.select("#suggestionsWidget").style("left", $(this).offset().left+"px")
+				    		.style("top", ($(this).offset().top + $(this).outerHeight()) + "px");
 				    	SparqlFace.textSearch($(this).val(), "<http://rknown.com/RKnownObject>", RKnown.view.updateSuggestions.bind(RKnown.view));
 			    	}
-			    	else d3.select("#suggestionsWidget").style("visibility", "hidden");
+			    	else d3.select("#suggestionsWidget").style("display", "none");
 			    }
 			});
 			
@@ -163,7 +163,7 @@ var RControl = {
 		},
 		
 		showPredicateSelection: function(visible) {
-			d3.select('#predicateSelection').style("visibility", visible?"visible":"hidden");
+			d3.select('#predicateSelection').style("display", visible?"block":"none");
 		},
 		
 		predicateSelected: function(predicate) {
@@ -182,7 +182,7 @@ var RControl = {
 				d3.select('#typeSelection').style("left", this.selectedNode.x+30)
 				.style("top", this.selectedNode.y-30);
 			}
-			d3.select('#typeSelection').style("visibility", visible?"visible":"hidden");
+			d3.select('#typeSelection').style("display", visible?"block":"none");
 		},
 		
 		setPredicateNameFromField: function() {
@@ -258,17 +258,19 @@ var RControl = {
 			}
 			this.selectNode(node, d3.event.shiftKey);
 			if(node==null) {
-				d3.selectAll('.popover').style("visibility", "hidden");
+				d3.selectAll('.popover').style("display", "none");
 			}
 			this.view.updateView();
 		},
 		
 		valuationMouseOver: function(valuation) {
 			if(valuation.value.startsWith('http')) {
-				d3.select('#webInfo').style("visibility", "visible");
+				d3.select('#webInfo').style("display", "block")
+					.style("left", $('#suggestions').offset().left+20+"px")
+					.style("top", $('#suggestions').offset().top+20+"px");
 				d3.select('#webFrame').attr('src', valuation.value);
 			}
-			else d3.select('#webInfo').style("visibility", "hidden");
+			else d3.select('#webInfo').style("display", "none");
 		},
 		
 		putRelatedNode: function(location) {

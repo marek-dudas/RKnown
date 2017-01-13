@@ -6,7 +6,7 @@ var RView = {
 		init: function init(viewingElement, relatedCanvasElement, width, height) {
 			
 			this.width = 800;
-			this.height = 600;
+			this.height = $(window).height()-200;
 			
 		    this.layoutRunning = false;
 		    
@@ -15,7 +15,7 @@ var RView = {
 		    this.relatedCanvas = d3.select("#"+relatedCanvasElement);
 		    
 		    this.relatedSvg = this.relatedCanvas.append("svg").attr("width", RSettings.relatedNodesCanvasWidth)
-		    	.attr("height", height);
+		    	.attr("height", this.height);
 		    
 		    this.relatedNodes = this.relatedSvg.append("svg:g").selectAll("g");
 		    
@@ -24,8 +24,9 @@ var RView = {
 			    
 			this.svg = this.viewingElement
 				.append("svg")
+				.attr("shape-rendering", "geometricPrecision")
 				.attr("width", width)
-				.attr("height", height);
+				.attr("height", this.height);
 				
 				
 			this.svg.append('svg:defs').append('svg:marker')
@@ -38,8 +39,9 @@ var RView = {
 			    .attr('orient', 'auto')
 		  	.append('svg:path')
 			    //.attr('d', 'M0,-5L10,0L0,5')
-			    .attr('d', 'M2,2 L2,11 L10,6')
-			    .style("fill", "#ccc");
+			    .attr('d', 'M2,2 L10,6 L2,11')
+			    .style("stroke", "#777")
+		    	.attr('fill', 'none');
 
 			this.svg.append('svg:defs').append('svg:marker')
 			    .attr('id', 'start-arrow')
@@ -87,11 +89,21 @@ var RView = {
 		    this.createLinkButton();
 		    this.createTypeButton();
 		    this.createLiteralButton();
-		    
-		    
-			//window.addEventListener('resize', this.updateSize.bind(this));
+		    		    
+			window.addEventListener('resize', this.updateSize.bind(this));
 			
 			//$(window).load(this.updateSize.bind(this));
+		},
+		
+		updateSize: function() {
+			var currentSize = this.viewingElement.node().getBoundingClientRect();
+			var height = $(window).height();
+			alert(height);
+			this.rootSvg.attr("width", currentSize.width).attr("height", height);
+			this.layout.size([currentSize.width, currentSize.height]);
+			
+			var currentSize = this.relatedCanvas.node().getBoundingClientRect();
+			this.relatedSvg.attr("width", currentSize.width).attr("height", height);
 		},
 		
 		updateGraphList: function() {
@@ -103,16 +115,17 @@ var RView = {
 		},
 		
 		showLiteralInput: function(node) {
-			d3.select('#literalInput').style("visibility", "visible")
+			d3.select('#literalInput')
+			.style("display", "block")
 			.style("left", node.x+"px")
 			.style("top", (node.y+120)+"px");
-			
+						
 			d3.select('#saveLiteral').on('click', RKnown.control.addLiteralButtonClick.bind(RKnown.control));
 			
 		},
 
 		createLiteralButton: function() {
-			var arc = d3.svg.symbol().type('triangle-up');
+			/*var arc = d3.svg.symbol().type('triangle-up');
 
 			this.literalButton = this.canvas.append('path')
 			.attr('d',arc)
@@ -120,11 +133,16 @@ var RView = {
 			.attr('stroke','#000')
 			.attr('stroke-width',1)
 			.style("visibility", "hidden")
+			.on("click", RKnown.control.literalButtonClick.bind(RKnown.control));*/
+			
+			this.literalButton = this.canvas.append("image")
+		    .attr("xlink:href", "png/glyphicons-31-pencil.png")
+			.style("visibility", "hidden")
 			.on("click", RKnown.control.literalButtonClick.bind(RKnown.control));
 		},
 		
 		createLinkButton: function() {
-			var arc = d3.svg.symbol().type('triangle-up');
+			/*var arc = d3.svg.symbol().type('triangle-up');
 
 			this.linkButton = this.canvas.append('path')
 			.attr('d',arc)
@@ -132,17 +150,27 @@ var RView = {
 			.attr('stroke','#000')
 			.attr('stroke-width',1)
 			.style("visibility", "hidden")
-			.on("click", RKnown.control.linkButtonClick.bind(RKnown.control));
+			.on("click", RKnown.control.linkButtonClick.bind(RKnown.control));*/
+			
+			this.linkButton = this.canvas.append("image")
+			    .attr("xlink:href", "png/glyphicons-212-arrow-right.png")
+				.style("visibility", "hidden")
+				.on("click", RKnown.control.linkButtonClick.bind(RKnown.control));
 		},
 
 		createTypeButton: function() {
-			var arc = d3.svg.symbol().type('triangle-down');
+			/*var arc = d3.svg.symbol().type('triangle-down');
 
 			this.typeButton = this.canvas.append('path')
 			.attr('d',arc)
 			.attr('fill', '#00a')
 			.attr('stroke','#000')
 			.attr('stroke-width',1)
+			.style("visibility", "hidden")
+			.on("click", RKnown.control.typeButtonClick.bind(RKnown.control));*/
+			
+			this.typeButton = this.canvas.append("image")
+		    .attr("xlink:href", "png/glyphicons-501-education.png")
 			.style("visibility", "hidden")
 			.on("click", RKnown.control.typeButtonClick.bind(RKnown.control));
 		},
@@ -154,11 +182,11 @@ var RView = {
 		},*/
 		
 		showNodeButtons: function(x,y) {
-			this.linkButton.attr('transform',"translate("+(x+20)+","+(y-30)+")");
+			this.linkButton.attr('transform',"translate("+(x+10)+","+(y-50)+")");
 			this.linkButton.style("visibility", "visible");
-			this.typeButton.attr('transform', "translate("+(x-30)+","+(y-30)+")");
+			this.typeButton.attr('transform', "translate("+(x-30)+","+(y-50)+")");
 			this.typeButton.style("visibility", "visible");
-			this.literalButton.attr('transform', "translate("+(x-60)+","+(y-30)+")");
+			this.literalButton.attr('transform', "translate("+(x-70)+","+(y-50)+")");
 			this.literalButton.style("visibility", "visible");
 		},
 		
@@ -285,24 +313,42 @@ var RView = {
 		},
 		
 		updateSuggestions: function(data) {
+			//this.suggestions.selectAll('tr').remove();
+			d3.select('.no-records-found').remove();
 			this.suggestions = this.suggestions.data(data, function(d){return d.uri});
-			var suggestionsEnter = this.suggestions.enter().append("tr");
+			var suggestionsEnter = this.suggestions.enter().append("tr").on("click", function(d) {
+				RKnown.control.addEntity(d.uri, d.name);
+				d3.select("#suggestionsWidget").style("visibility", "hidden");
+				})
+				.on('mouseover', function() {d3.select(this).style("background", "#ddd")})
+				.on('mouseleave', function() {d3.select(this).style("background", "#fff")});
 			suggestionsEnter.append("td").append("a")
 				.attr("href", "#")
 				.text(function(d) {return d.name;})
 				.on("click", function(d) {
 					RKnown.control.addEntity(d.uri, d.name);
-					d3.select("#suggestionsWidget").style("visibility", "hidden");
+					d3.select("#suggestionsWidget").style("display", "none");
 					});
 			suggestionsEnter.append("td").text(function(d) {d.getComment();})
 			this.suggestions.exit().remove();
-			if(data.length>0) d3.select("#suggestionsWidget").style("visibility", "visible");
-			else d3.select("#suggestionsWidget").style("visibility", "hidden");
+			if(data.length>0) d3.select("#suggestionsWidget").style("display", "block");
+			else d3.select("#suggestionsWidget").style("display", "none");
+			//$("#suggestionTable").bootstrapTable();
 		},
 		
 		updatePropSuggestions: function(data) {
+			//this.suggestions.selectAll('tr').remove();
+			d3.select('.no-records-found').remove();
 			this.suggestions = this.suggestions.data(data, function(d){return d.uri});
-			var suggestionsEnter = this.suggestions.enter().append("tr");
+			var suggestionsEnter = this.suggestions.enter().append("tr").on("click", function(d) {
+				RKnown.control.predicateSelected(d);
+				/*RKnown.control.creationLink.setUri(d.uri);
+				RKnown.control.creationLink.setName(d.name);*/
+				d3.select("#suggestionsWidget").style("display", "none");
+				RKnown.control.showPredicateSelection(false);
+				})				
+				.on('mouseover', function() {d3.select(this).style("background", "#ddd")})
+				.on('mouseleave', function() {d3.select(this).style("background", "#fff")})
 			suggestionsEnter.append("td").append("a")
 				.attr("href", "#")
 				.text(function(d) {return d.name;})
@@ -310,16 +356,17 @@ var RView = {
 					RKnown.control.predicateSelected(d);
 					/*RKnown.control.creationLink.setUri(d.uri);
 					RKnown.control.creationLink.setName(d.name);*/
-					d3.select("#suggestionsWidget").style("visibility", "hidden");
+					d3.select("#suggestionsWidget").style("display", "none");
 					RKnown.control.showPredicateSelection(false);
 					});
 			this.suggestions.exit().remove();
-			if(data.length>0) d3.select("#suggestionsWidget").style("visibility", "visible");
-			else d3.select("#suggestionsWidget").style("visibility", "hidden");
+			if(data.length>0) d3.select("#suggestionsWidget").style("display", "block");
+			else d3.select("#suggestionsWidget").style("display", "none");
+			//$("#suggestionTable").bootstrapTable();
 		},
 		
 		showNodeProperties: function(node) {
-			d3.select('#propertiesWidget').style("visibility", "visible")
+			d3.select('#propertiesWidget').style("display", "block")
 				.style("left", d3.mouse(d3.select("body").node())[0]+"px")
 				.style("top", d3.mouse(d3.select("body").node())[1]+30+"px");
 			d3.select('#propertiesTable').selectAll('tr').remove();
@@ -338,7 +385,7 @@ var RView = {
 		    
 			this.edges.enter()
 			        .append("line")
-			        .style("stroke", "#ccc")
+			        .style("stroke", "#777")
 			        .style("stroke-width", 2)
 				    .style('marker-start', function(d) { return d.left ? 'url(#start-arrow)' : ''; })
 				    .style('marker-end', function(d) { return d.right ? 'url(#end-arrow)' : ''; })
@@ -353,16 +400,28 @@ var RView = {
 		        		.style("left", (d3.event.clientX+30)+"px")
 		        		.style("top", (d3.event.clientY+180)+"px")
 			        	});
+		    
+		    function getBB(selection) {
+		        selection.each(function(d){d.bbox = this.getBBox(); d.bboxMargin = 5;})
+		    }
+		    
 		     linktextEnter.append("text")
 		     .attr("class", "linklabel")
 		     .attr("dx", 1)
 		     .attr("dy", ".35em")
 		     .attr("text-anchor", "middle")
-		     .text(function(d) { return d.name; });
+		     .text(function(d) { return d.name; })
+		     .call(getBB);
+		     linktextEnter.insert("rect","text")
+		         .attr("width", function(d){return d.bbox.width+d.bboxMargin})
+		         .attr("height", function(d){return d.bbox.height+d.bboxMargin})
+		         .attr("x", function(d){return (-d.bbox.width-d.bboxMargin)/2})
+		         .attr("y", function(d){return (-d.bbox.height-d.bboxMargin)/2})
+		         .style("fill", "white");
 		     linktextEnter.append("path")
 			        .attr("d", Node.path(80,40))
 			        .attr("class", "hiddenPath");
-		    
+		  		    
 		    this.linktext.selectAll(".linklabelholder text").text(function(d) { return d.name; });
 		    
 		    //if(this.model.getNodes().length>0){  
@@ -426,7 +485,7 @@ var RView = {
 			    	.classed("nodename", true)
 			    	.text(function(d) { return d.name; })	    	
 		      		.style("font-size", function(d) { 
-		      			return Math.max(Math.min(16, Math.min(d.width, (d.width - 8) 
+		      			return Math.max(Math.min(18, Math.min(d.width, (d.width - 8) 
 		      			/ this.getComputedTextLength() * 14)), 13) + "px"; })      			
 					.attr("x","0")//function(d) {return d.width/2+2;})
 					.attr("y","0") 

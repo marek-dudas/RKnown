@@ -1,108 +1,42 @@
-text {
-		  font: 16px Helvetica Neue, Helvetica, Arial, sans-serif;
+	    text {
+		 font-family: 'Patrick Hand',monospace;
+		  font-size: 18px;
+		  font-weight: bold;
 		  text-anchor: middle;
 		  pointer-events: none;
 		}
-		
-		circle {
-		  fill: #ccc;
-		}
-		
-		.node:hover circle {
-		  fill: #FFA500;
-		}
 				
 		.node path {
-			fill: #FFEECA;
+			fill: #ffffff;
 			cursor: pointer;
-			stroke: #ccc;
-			stroke-width: 1px;
+			stroke: #777;
+			stroke-width: 2px;
 		}		
 		
 		path.selected {
-			fill: #FFC125 !important;
+			fill: #eee !important;
 		}
 		
 		.selected path {
-			fill: #FFC125 !important;
+			fill: #eee !important;
 		}
 		
 		.node path:hover {
-			fill: #FFA500;
+			fill: #eee;
 		}
 		
 		.linklabelholder path {
 			opacity: 0.0;
 		}
 		
-		.linklabelholder text {
-			font-size: 14;
-			fill: #777777
+		.linklabel {
+			font-size: 18px;
+			background-color: #fff;
 		}
 		
 		.typelabel text {
 			fill: #cccccc;
 		}
 		
-		text.vocabPath {
-			font-size: 14;
-			font-weight: bold;
-		}
-		
-		.vocabPath rect {
-			stroke-width:1;
-			stroke: #000000;
-		}
-		
-		.button {
-		   border-top: 1px solid #d6d6d6;
-		   background: #d6d6d6;
-		   /*
-		   background: -webkit-gradient(linear, left top, left bottom, from(#3e779d), to(#65a9d7));
-		   background: -webkit-linear-gradient(top, #3e779d, #65a9d7);
-		   background: -moz-linear-gradient(top, #3e779d, #65a9d7);
-		   background: -ms-linear-gradient(top, #3e779d, #65a9d7);
-		   background: -o-linear-gradient(top, #3e779d, #65a9d7);*/
-		   padding: 3px 5px;
-		   -webkit-border-radius: 13px;
-		   -moz-border-radius: 13px;
-		   border-radius: 13px;
-		   text-shadow: rgba(0,0,0,.4) 0 1px 0;
-		   color: black;
-		   font-size: 12px;
-		   font-family: Helvetica, Arial, Sans-Serif;
-		   text-decoration: none;
-		   vertical-align: middle;
-		   }
-		.button:hover {
-		   border-top-color: #28597a;
-		   background: #28597a;
-		   color: #ccc;
-		   }
-		.button:active {
-		   border-top-color: #d6d6d6;
-		   background: #d6d6d6;
-		   }
 		   
-		.roundbox {
-			-webkit-border-radius: 15px;
-			border-radius: 15px;
-			border: 6px #d6d6d6 solid;
-			
-			-moz-box-shadow: inset 0px 0px 13px 3px #d6d6d6;
-			-webkit-box-shadow: inset 0px 0px 13px 3px #d6d6d6;
-			box-shadow: inset 0px 0px 13px 3px #d6d6d6;
-		}
-		
-		.roundboxNoShadow {
-			-webkit-border-radius: 15px;
-			border-radius: 15px;
-			border: 6px #d6d6d6 solid;
-			
-		}
-		
-		.toolheading {
-			font: 14px Helvetica Neue, Helvetica, Arial, sans-serif;
-			color: grey;
-			font-weight: bold;
-		}
+		   

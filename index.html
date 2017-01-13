@@ -6,72 +6,133 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     
         <title>RKnown</title>
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css" integrity="sha384-AysaV+vQoT3kOAXZkl02PThvDr8HYKPZhNT5h/CXfBThSRXQ6jW5DO2ekP5ViFdi" crossorigin="anonymous">
-        	
+        <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css" integrity="sha384-AysaV+vQoT3kOAXZkl02PThvDr8HYKPZhNT5h/CXfBThSRXQ6jW5DO2ekP5ViFdi" crossorigin="anonymous"> -->
+        
+        <!-- <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.0/bootstrap-table.min.css"> -->
+        
+        
+        <link href="bs/css/bootstrap.min.css" rel="stylesheet">
+    	<link href="bs/css/bootstrap-theme.min.css" rel="stylesheet">
+    	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.0/bootstrap-table.min.css">
+    	
+    	
+<link href='http://fonts.googleapis.com/css?family=Patrick+Hand&subset=latin,latin-ext' rel='stylesheet' type='text/css' />
         <link rel="stylesheet" href="rknown.css">
                 
-        <link href="bs/css/bootstrap-theme.css" rel="stylesheet">
         
         
   		
   		
 	</head>
 	<body>
-		<div>
-		  <label for="newEntityField">Add new thing: </label>
-		  <input id="newEntityField">
-		  <label for="modelNameField">Name of this document:</label>
-		  <input id="modelNameField">
-		  <button type="button" id="btnSave" class="btn btn-lg btn-primary">Save</button>
-		</div>		
+		<div class="container-fluid">
 		
-		<div style="width:200px; border:1px solid;" id="graphs"></div>
-		<div style="width:1150px">
-		<div style="padding: 0px; width:320px; height:900px; border:1px solid; float:left" id="suggestions"></div>
-		<div style="padding: 0px; width:800px; height:600px; border:1px solid; float:right" id="canvas"> </div>	    
-	    </div>
-		<div class="popover" style="position:absolute; left:500px; top:200px; width:330px; height:220px; background: #cccccc; visibility: hidden;"
-    		 id="predicateSelection" class="settingsPopUp">
-    		 		Name of the relation: <br/>
-    		 		<input id="newPredicateField">
+			<div class="row">
+				<div class="col-xs-12 col-md-4">
+					<div class="panel panel-primary">
+						<div class="panel-heading">RKnown</div>
+						<div class="panel-body">				  
+						  <label for="modelNameField">Name of this document:</label>
+						  <input id="modelNameField">
+						  <button type="button" id="btnSave" class="btn btn-lg btn-primary">Save</button>
+					  	</div>
+					</div>	
+				</div>
+				<div class="col-xs-12 col-md-8">
+					<div class="panel panel-primary">
+						<div class="panel-heading">Add new item to canvas</div>
+						<div class="panel-body">
+							<label for="newEntityField">Name of the item: </label>
+							<input id="newEntityField"> Hit enter or choose from suggestions
+						</div>
+					</div>	
+				</div>				
+			</div>
+			
+			<div class="row">
+			   <div class="col-xs-12 col-md-8">
+					<div class="panel panel-primary">
+						<div class="panel-heading">
+							Your sketch: 						
+						</div> 
+						<div class="panel-body" id="canvas" style="padding:0px"> </div>
+					</div>	
+				</div>
+				<div class="col-xs-12 col-md-2">
+					<div class="panel panel-default">
+						<div class="panel-heading">Suggestions</div> 
+						<div class="panel-body" id="suggestions"> </div>
+					</div>    
+				</div>
+				<div class="col-xs-12 col-md-2">
+			    	<div class="panel panel-default">
+						<div class="panel-heading">Your other sketches</div> 
+						<div class="panel-body" id="graphs"> </div>
+					</div>
+				</div>	    
+		    </div>
+		    
+		    <div class="row">
+		    	<div class="col-xs-12">
+					<div class="panel panel-default">
+						<div class="panel-heading">Attributions</div> 
+						<div class="panel-body">
+							Icons CC BY <a href="http://glyphicons.com">glyphicons.com</a>
+						</div>
+					</div>    
+				</div>
+		    </div>
 	    </div>
 	    
-	    <div class="popover" style="position:absolute; left:500px; top:200px; width:330px; height:220px; visibility: hidden;"
+	    
+	    <div class="popover" style="width:330px; height:220px;"
+    		 id="propertiesWidget" class="settingsPopUp">
+    		 <div class="popover-content">
+    		 		<table id="propertiesTable" class="table-striped">
+    		 		</table>
+    		 </div>
+	    </div>
+	    
+		<div class="popover" style="left:500px; top:200px; width:330px; height:220px; background: #cccccc;"
+    		 id="predicateSelection" class="settingsPopUp">
+    		 		<h3 class="popover-title">Name of the relation: </h3>
+    		 		<div class="popover-content"><input id="newPredicateField"></div>
+	    </div>
+	    
+	    <div class="popover" style="left:500px; top:200px; width:330px; height:220px;"
     		 id="typeSelection">
-    		 		<h3 class="popover-title">What kind of thing is this?: </h3><br/>
+    		 		<h3 class="popover-title">What kind of thing is this?: </h3>
     		 		<div class="popover-content"><input id="typeField"></div>
 	    </div>
 	    
-	    <div class="popover" style="position:absolute; left:800px; top:200px; width:530px; height:620px; background: #cccccc; visibility: hidden;"
+	    <div class="popover" style="z-index:9999; max-width: 100%; width:530px; height:620px;"
     		 id="webInfo" class="settingsPopUp">
     		 		<iframe id="webFrame" width="100%" height="100%"></iframe>
 	    </div>
 	    
-	    <div class="popover" style="position:absolute; left:500px; top:200px; width:830px; height:220px; background: #cccccc; visibility: hidden;"
+	    <div class="popover" style="max-width: 100%; width:830px; height:220px;"
     		 id="literalInput" class="settingsPopUp">
+    		 <div class="popover-content">
     		 		What kind of information are you adding?: <br/>
     		 		<input id="literalPredicateField">
     		 		Now enter the information:
     		 		<input id="literalValue">
-    		 		<input type="button" id="saveLiteral" value="Save">
+    		 		<button type="button" id="saveLiteral" class="btn btn-lg btn-primary">Save</button>
+    		 </div>
 	    </div>
 	    
-	    <div class="popover" style="position:absolute; left:500px; top:200px; width:330px; height:220px; background: #cccccc; visibility: hidden;"
-    		 id="propertiesWidget" class="settingsPopUp">
-    		 		<table id="propertiesTable">
-    		 		</table>
-	    </div>
-	    
-	    <div class="popover" style="position:absolute; left:500px; top:200px; width:330px; height:220px; background: #cccccc; visibility: hidden;"
+	    <div class="popover" style="width:330px; height:220px;"
     		 id="suggestionsWidget" class="settingsPopUp">
-    		 		<table id="suggestionTable">
+    		 <div class="popover-content">
+    		 		<table id="suggestionTable" class="table-hover">
     		 		</table>
+    		 </div>
 	    </div>
 	    
 	    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js" integrity="sha384-3ceskX3iaEnIogmQchP8opvBy3Mi7Ce34nWjpBIwVTHfGYWQS9jwHDVRnpKKHJg7" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.3.7/js/tether.min.js" integrity="sha384-XTs3FgkjiBgo8qjEjBk0tGmf3wPrWtA6coPfQDfFEY8AnYJwjalXCiosYRBIBZX8" crossorigin="anonymous"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/js/bootstrap.min.js" integrity="sha384-BLiI7JTZm+JWlgKa0M0kGRpJbF2J8q+qreVrKBC47e3K6BW78kGLrCkeRX6I9RoK" crossorigin="anonymous"></script>
-<script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+ <script src="bs/js/bootstrap.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.0/bootstrap-table.min.js"></script>
 
   		<script src="https://d3js.org/d3.v3.min.js"></script>
 		<script src="http://cdnjs.cloudflare.com/ajax/libs/jsonld/0.3.15/jsonld.js"></script>
@@ -90,7 +151,11 @@
 		  $(document.body).popover({
 		    container: 'body'
 		  })
+		  $(".table-striped").bootstrapTable();
+		  $("#suggestionTable").bootstrapTable();
 		})
+		
+		
 		
 		RKnown.go('canvas', 'suggestions', 'newEntityField', 'modelNameField', 1100, 900);
 	</script>

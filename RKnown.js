@@ -8,6 +8,7 @@ var RKnown = {
 			this.view.init(canvasId, suggestionsId, width, height);
 			this.view.setData(this.model);
 			this.control.setView(this.view, inputFieldId);
+			this.view.updateSize();
 			//this.control.loadGraph("http://test");
 		}
 }

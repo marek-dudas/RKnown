@@ -55,3 +55,7 @@ target/
 .tern-project
 
 bs/
+png/
+*.ttl
+test.ttl
+*test.html
