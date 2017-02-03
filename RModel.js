@@ -2,13 +2,17 @@ var Node = {
 		init: function(uri, name) {
 			this.selected = false;
 			this.name = name;
-			this.uri = uri;
+			this.uri = SparqlFace.stripBrackets(uri);
 			this.id = -1;
 			this.visible = true;
 			this.typeNode = false;
 			this.width = RSettings.nodeWidth;
 			this.height = RSettings.nodeHeight;
 			this.valuations = [];
+		},
+		
+		brUri: function() {
+			return "<"+this.uri+">";
 		},
 		
 		setTypeNode: function() {
@@ -87,11 +91,15 @@ var Link = {
 			this.end = end;
 			this.source = start;
 			this.target = end;
+			this.from = start;
+			this.to = end;
 			this.right = true;
 			this.left = false;
 			this.id = -1;
 			this.name = name;
-			this.uri = uri;
+			this.uri = SparqlFace.stripBrackets(uri);
+			this.startUri;
+			this.endUri;
 		},
 		triplify: function() {
 			var triples = Triple.create(this.start.uri, this.uri, this.end.uri).str();
@@ -165,6 +173,28 @@ var RModel = {
 				if(this.nodes[i].id==id) return this.nodes[i];
 			}
 			return null;
+		},
+		
+		getNodeByUri: function(uri) {
+			for(var i=0; i<this.nodes.length; i++){
+				if(this.nodes[i].uri==uri) return this.nodes[i];
+			}
+			return null;			
+		},
+		
+		linkExists: function(fromUri, toUri) {
+			for(var i=0; i<this.links.length; i++) {
+				if(this.links[i].from.uri == fromUri && this.links[i].to.uri == toUri) return true;
+			}
+			return false;
+		},
+		
+		addLinkByUris: function(linkUri, linkName, fromUri, toUri) {
+			if(!this.linkExists(fromUri, toUri)) {
+				var newLink = Object.create(Link);
+				newLink.init(this.getNodeByUri(fromUri), this.getNodeByUri(toUri), linkUri, linkName);
+				this.addLink(newLink);
+			}
 		},
 
 		updateCounter: function(idToCheck) {

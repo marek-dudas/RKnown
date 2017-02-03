@@ -6,5 +6,6 @@ var RSettings = {
 		nodeWidth: 100,
 		nodeHeight: 40,
 		relatedNodesCanvasWidth: 320,
-		uriBase: "http://rknown.com/data/"
+		uriBase: "http://rknown.com/data/",
+		maxPathLength: 5
 }

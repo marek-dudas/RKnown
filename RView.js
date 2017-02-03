@@ -89,10 +89,34 @@ var RView = {
 		    this.createLinkButton();
 		    this.createTypeButton();
 		    this.createLiteralButton();
+		    
+		    $("#checkboxLearning").on("change",RKnown.control.learningCBChanged.bind(RKnown.control))
+		    
+		    function updateSize(event){
+		    	var view = RKnown.view;
+				var currentSize = view.viewingElement.node().getBoundingClientRect();
+				var height = $(window).height() - currentSize.top - 10;
+				//alert(height);
+				view.rootSvg.attr("width", currentSize.width).attr("height", height);
+				view.layout.size([currentSize.width, currentSize.height]);
+				
+				var currentSize = view.relatedCanvas.node().getBoundingClientRect();
+				view.relatedSvg.attr("width", currentSize.width).attr("height", height);
+		    }
 		    		    
-			window.addEventListener('resize', this.updateSize.bind(this));
+			window.addEventListener('resize', updateSize);
 			
-			//$(window).load(this.updateSize.bind(this));
+			//$(window).resize(this.updateSize.bind(this));
+			
+			window.addEventListener('load', updateSize);
+		},
+		
+		learningStateSet: function() {
+			return $('#checkboxLearning').is(':checked');
+		},
+		
+		getRelatedSvgWidth: function() {
+			return this.relatedSvg.node().getBoundingClientRect().width;
 		},
 		
 		updateSize: function() {
@@ -247,8 +271,9 @@ var RView = {
 		setDraggedNode: function(node) {
 			
 			this.dragSvg = d3.select("body").append("svg").style("position", "absolute")
-						.style("z-index", 1000)
+						.style("z-index", 9999)
 						.attr("overflow", "visible")
+						.style("overflow", "visible !important")
 						.attr("width", node.width)
 						.attr("height", node.height);
 			
@@ -318,17 +343,13 @@ var RView = {
 			this.suggestions = this.suggestions.data(data, function(d){return d.uri});
 			var suggestionsEnter = this.suggestions.enter().append("tr").on("click", function(d) {
 				RKnown.control.addEntity(d.uri, d.name);
-				d3.select("#suggestionsWidget").style("visibility", "hidden");
+				d3.select("#suggestionsWidget").style("display", "none");
 				})
 				.on('mouseover', function() {d3.select(this).style("background", "#ddd")})
 				.on('mouseleave', function() {d3.select(this).style("background", "#fff")});
 			suggestionsEnter.append("td").append("a")
 				.attr("href", "#")
-				.text(function(d) {return d.name;})
-				.on("click", function(d) {
-					RKnown.control.addEntity(d.uri, d.name);
-					d3.select("#suggestionsWidget").style("display", "none");
-					});
+				.text(function(d) {return d.name;});
 			suggestionsEnter.append("td").text(function(d) {d.getComment();})
 			this.suggestions.exit().remove();
 			if(data.length>0) d3.select("#suggestionsWidget").style("display", "block");
@@ -366,6 +387,14 @@ var RView = {
 		},
 		
 		showNodeProperties: function(node) {
+			
+			function makeLinks(selection) {
+				selection.each(function(d) {
+					if(d.value.startsWith('http://')) 
+						$(this).wrap("<a target=\"_blank\" href=\""+d.value+"\"></a>");
+					});
+			}
+			
 			d3.select('#propertiesWidget').style("display", "block")
 				.style("left", d3.mouse(d3.select("body").node())[0]+"px")
 				.style("top", d3.mouse(d3.select("body").node())[1]+30+"px");
@@ -374,9 +403,10 @@ var RView = {
 			valuations = valuations.data(node.valuations);
 			lines = valuations.enter()
 				.append('tr');
-			lines.append('td').text(function(d){return d.predicate.name;})
+			var properties = lines.append('td').classed("valuationProperty", true).text(function(d){return d.predicate.name;})
 				.on('mouseover', function(d){RKnown.control.valuationMouseOver(d);})
 			lines.append('td').text(function(d){return d.value});
+			properties.call(makeLinks);
 		},
 		
 		updateView: function() {

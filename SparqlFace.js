@@ -10,9 +10,6 @@ var SparqlFace = {
 			this.updateService.Service(RSettings.sparqlUpdateProxy, RSettings.sparqlUpdateEndpoint);
 			this.updateService.setMethod('POST');
 		},
-		saveTriple: function(triple) {
-			
-		},
 		nameFromUri: function(uri) {
 			return uri.match("[^\/#]+$");
 		},
@@ -69,6 +66,27 @@ var SparqlFace = {
 			
 			this.query(query, this.saveLiteralsAndContinue.bind(this));
 			
+		},
+		loadLiteralsForObject: function(node) {
+			var query = "SELECT DISTINCT * WHERE { <" +node.uri+"> ?predicate ?value ." +
+			"?predicate <http://www.w3.org/2000/01/rdf-schema#label> ?label . " +
+			"FILTER(?predicate != <http://rknown.com/xcoord> && ?predicate != <http://rknown.com/ycoord> && ?predicate != <http://www.w3.org/2000/01/rdf-schema#label>)" +
+			"FILTER(isLiteral(?value))" +
+			"}";
+			this.query(query, function(json) {
+				for(var j=0; j<json.results.bindings.length; j++) {
+					var binding = json.results.bindings[j];
+					var predicate = Object.create(Node);
+					var valuation = Object.create(Valuation);
+					var predicateName = binding["label"].value;
+					var predicateUri = binding["predicate"].value;
+					var value = binding["value"].value;
+					predicate.init(predicateUri, predicateName);
+					valuation.setPredicate(predicate);
+					valuation.setValue(value);
+					node.addValuation(valuation);
+				}
+			});
 		},
 		saveLiteralsAndContinue: function(json) {
 			for(var j=0; j<json.results.bindings.length; j++) {
@@ -196,5 +214,49 @@ var SparqlFace = {
 					alert("Graph saved successfully")
 				}});*/
 			
+		},
+		initLinkFinding: function() {
+			this.processedBuilders = 0;
+			this.builders = [];
+		},
+		findLinksBetween: function(a, b) {
+			for(var i=1; i<RSettings.maxPathLength; i++) {
+				var builder = Object.create(PathBuilder);
+				this.builders.push(builder);
+				builder.init(a,b,i);
+			}
+			/*var query1a = "SELECT * WHERE { " +
+					"<[a]> ?l1 <[b]> . }";
+			var query1b = "SELECT * WHERE { " +
+					"<[b]> ?l1 <[a]> . }";
+			var query2a = "SELECT * WHERE { " +
+					"<[a]> ?l1 ?o1 ." +
+					"?o1 ?l2 <[b]> . }";
+			var query2a = "SELECT * WHERE { " +
+					"<[b]> ?l1 ?o1 ." +
+					"?o1 ?l2 <[a]> . }";*/
+			
+		},
+		pathBuilderProcessed: function() {
+			this.processedBuilders++;
+			if(this.processedBuilders == this.builders.length) {
+				for(var i=0; i<this.builders.length; i++) {
+					if(this.builders[i].pathFound)
+					{
+						for(var p=0; p<this.builders[i].placeholders.length; p++) {
+							var pLink = this.builders[i].placeholders[p];				
+							RKnown.control.addEntityFromUri(pLink.s);
+							RKnown.control.addEntityFromUri(pLink.o);
+							RKnown.control.addLinkFromUri(this.stripBrackets(pLink.s), 
+									this.stripBrackets(pLink.p), 
+									this.stripBrackets(pLink.o));
+						}
+					}
+				}
+			}
+			RKnown.control.view.updateView();
+		},
+		stripBrackets: function(uri) {
+			return uri.replace(/[<>]/g,"");
 		}
 }
