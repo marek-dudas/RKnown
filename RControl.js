@@ -12,6 +12,7 @@ var RControl = {
 			this.addingLiteral = false;
 			this.relatedNodes = [];
 			this.creationPredicate = null;
+			this.newNodeLocation = [100,100];
 			SparqlFace.config(this.fillInputField.bind(this), this.fillPredicateField.bind(this), this.addRelatedNodes.bind(this));
 			//SparqlFace.getAllEntities();
 			//SparqlFace.getAllPredicates();
@@ -26,7 +27,7 @@ var RControl = {
 			    	if($(this).val()!="") {
 				    	d3.select("#suggestionsWidget").style("left", $(this).offset().left+"px")
 				    		.style("top", ($(this).offset().top + $(this).outerHeight()) + "px");
-				    	SparqlFace.textSearch($(this).val(), "<http://rknown.com/RKnownObject>", RKnown.view.updateSuggestions.bind(RKnown.view));
+				    	SparqlFace.textSearch($(this).val(), URIS.object, RKnown.view.updateSuggestions.bind(RKnown.view));
 			    	}
 			    	else d3.select("#suggestionsWidget").style("display", "none");
 			    }
@@ -126,17 +127,19 @@ var RControl = {
 				y = this.relatedNodes[this.relatedNodes.length-1].y+RSettings.nodeHeight;
 			}
 			for(var i=0; i<strings.length; i++) {
-				if(x+RSettings.nodeWidth/2>svgWidth) {
-					x=RSettings.nodeWidth/2;
-					y+=RSettings.nodeHeight;
-				}
-				var node = Object.create(Node);
 				var nodeUri = strings[i];
-				node.init(nodeUri, SparqlFace.nameFromUri(nodeUri));
-				node.x=x;
-				node.y=y;
-				x+=RSettings.nodeWidth;
-				this.relatedNodes.push(node);
+				if(this.model.getNodeByUri(nodeUri) == null) {
+					if(x+RSettings.nodeWidth/2>svgWidth) {
+						x=RSettings.nodeWidth/2;
+						y+=RSettings.nodeHeight;
+					}
+					var node = Object.create(Node);
+					node.init(nodeUri, SparqlFace.nameFromUri(nodeUri));
+					node.x=x;
+					node.y=y;
+					x+=RSettings.nodeWidth;
+					this.relatedNodes.push(node);
+				}
 			}
 			this.view.updateRelated();
 		},
@@ -171,19 +174,47 @@ var RControl = {
 		
 		showPredicateSelection: function(visible) {
 			d3.select('#predicateSelection').style("display", visible?"block":"none");
+			if(visible) {
+			    $(this.predicateInputFieldId).focus();
+			    $(this.predicateInputFieldId).val("");
+			    this.moveToMousePos(d3.select('#predicateSelection'));
+            }
 		},
+
+    showEntityWidget: function(visible) {
+        d3.select('#newEntityWidget').style("display", visible?"block":"none");
+        if(visible) {
+            $(this.inputFieldId).focus();
+            $(this.inputFieldId).val("");
+            this.moveToMousePos(d3.select('#newEntityWidget'));
+        }
+    },
+
+    moveToMousePos: function(d3Sel) {
+        var mousePos = d3.mouse(document.body);
+        d3Sel.style("left", mousePos[0]+"px");
+        d3Sel.style("top", mousePos[1]+"px");
+    },
 		
 		predicateSelected: function(predicate) {
 			if(this.creationLink != null) {
 				this.creationLink.setUri(predicate.uri);
 				this.creationLink.setName(predicate.name);
+				this.addRelationLink();
 			}
 			if(this.addingLiteral) {
 				$('#literalPredicateField').val(predicate.name);
 				this.creationPredicate = predicate;
 				this.addingLiteral = false;
 			}
+			this.view.updateView();
 		},
+
+	addRelationLink: function(){
+		this.model.addRelationLink(this.creationLink);
+		this.model.removeLink(this.creationLink);
+		this.creationLink = null;
+	},
 		
 		showTypeSelection: function(visible) {
 			if(this.selectedNode!=null) {
@@ -197,6 +228,7 @@ var RControl = {
 			this.creationLink.setUri(this.createUriFromName($(this.predicateInputFieldId).val()));
 			this.creationLink.setName($(this.predicateInputFieldId).val());
 			this.showPredicateSelection(false);
+			this.addRelationLink();
 			this.view.updateView();
 		},
 		
@@ -219,7 +251,7 @@ var RControl = {
 		},
 		
 		getEntityUriBase: function() {
-			return RSettings.uriBase;
+			return this.model.getEntityUriBase();
 		},
 		
 		createUriFromName: function(name) {
@@ -230,6 +262,7 @@ var RControl = {
 		addEntityFromTextField: function() {	
 			var name = $(this.inputFieldId).val();			
 			this.addEntity(this.createUriFromName(name), name);
+			this.showEntityWidget(false);
 		},
 		
 		addEntityFromUri: function(uri) {
@@ -237,8 +270,8 @@ var RControl = {
 			if(this.model.getNodeByUri(uri) == null) {
 				var node = Object.create(Node);
 				node.init(uri, SparqlFace.nameFromUri(uri));
-				node.x = 100;
-				node.y = 100;
+				node.x = this.newNodeLocation[0];
+				node.y = this.newNodeLocation[1];
 				this.model.addNode(node);
 			}
 		},
@@ -250,8 +283,9 @@ var RControl = {
 		addEntity: function(uri, name) {
 			var node = Object.create(Node);
 			node.init(uri, name);
-			node.x = 100;
-			node.y = 100;
+			node.x = this.newNodeLocation[0];
+			node.y = this.newNodeLocation[1];
+			this.showEntityWidget(false);
 			this.model.addNode(node);
 			
 			if(this.view.learningStateSet()) {
@@ -264,6 +298,7 @@ var RControl = {
 				this.view.updateView();
 				SparqlFace.getRelatedNodes(node);
 			}
+			return node;
 		},
 		
 		mouseMove: function(location) {
@@ -273,6 +308,11 @@ var RControl = {
 				this.view.updateView();
 			}
 		},
+
+    dblClick: function(location) {
+	    this.newNodeLocation = location;
+	    this.showEntityWidget(true);
+    },
 		
 		canvasMouseDown: function(location, node) {
 			if(this.linkStart != null && node!=null) {
@@ -290,6 +330,8 @@ var RControl = {
 			}
 			this.selectNode(node, d3.event.shiftKey);
 			if(node==null) {
+			    if(this.creationLink !=null) this.model.removeLink(this.creationLink);
+			    this.creationLink = null;
 				this.hidePopovers();
 			}
 			this.view.updateView();
@@ -298,6 +340,7 @@ var RControl = {
 		hidePopovers: function() {
 			d3.selectAll('.popover').style("display", "none");
 		},
+		
 		
 		valuationMouseOver: function(valuation) {
 			if(valuation.value.startsWith('http')) {
@@ -314,6 +357,14 @@ var RControl = {
 			this.relatedNode.y = location[1];
 			this.model.addNode(this.relatedNode);
 			SparqlFace.loadLiteralsForObject(this.relatedNode);
+
+            if(this.view.learningStateSet()) {
+                SparqlFace.initLinkFinding();
+                for(var i=0; i<this.model.nodes.length-1; i++) {
+                    SparqlFace.findLinksBetween(this.model.nodes[i], this.relatedNode);
+                }
+            }
+
 			this.view.updateView();
 		},
 		
@@ -324,8 +375,12 @@ var RControl = {
 				this.view.updateView();
 				if(node.valuations.length > 0) 
 					this.view.showNodeProperties(node);
-				else this.hidePopovers();
+				else this.hideNodeProperties();
 			}
+		},
+		
+		hideNodeProperties: function() {
+			d3.select('#propertiesWidget').style("display", "none");
 		},
 		
 		/*showLinkButton: function(node) {
@@ -342,8 +397,19 @@ var RControl = {
 		
 		literalButtonClick: function() {
 			this.view.showLiteralInput(this.selectedNode);
+			$('#literalPredicateField').focus();
+            $('#literalPredicateField').val("");
+            $('#literalValue').val("");
 			d3.event.stopPropagation();
 		},
+
+    delButtonClick: function() {
+		    if(this.selectedNode !=null) {
+		        this.model.removeNode(this.selectedNode);
+		        this.selectedNode = null;
+		        this.view.updateView();
+            }
+    },
 		
 		linkButtonClick: function(){
 			if(this.linkStart == null) {

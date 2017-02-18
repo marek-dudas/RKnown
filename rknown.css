@@ -5,13 +5,28 @@
 		  text-anchor: middle;
 		  pointer-events: none;
 		}
+
+		.hint {
+			font-style: italic;
+		}
+		
+		.relationNode {
+		  opacity: 0.7;
+		}
 				
 		.node path {
-			fill: #ffffff;
+			fill: #ddd;
 			cursor: pointer;
 			stroke: #777;
 			stroke-width: 2px;
 		}		
+		
+		.relationNode path {
+			fill: #eee;
+			cursor: pointer;
+			stroke: #aaa;
+			stroke-width: 2px;
+		}	
 		
 		path.selected {
 			fill: #eee !important;

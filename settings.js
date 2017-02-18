@@ -8,4 +8,10 @@ var RSettings = {
 		relatedNodesCanvasWidth: 320,
 		uriBase: "http://rknown.com/data/",
 		maxPathLength: 5
+
+}
+
+var URIS = {
+    relation: "<http://rknown.com/RKnownRelation>",
+	object: "<http://rknown.com/RKnownObject>"
 }

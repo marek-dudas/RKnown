@@ -29,34 +29,28 @@
 		<div class="container-fluid">
 		
 			<div class="row">
-				<div class="col-xs-12 col-md-4">
+				<div class="col-xs-12 col-md-12">
 					<div class="panel panel-primary">
 						<div class="panel-heading">RKnown</div>
 						<div class="panel-body">				  
 						  <label for="modelNameField">Name of this document:</label>
 						  <input id="modelNameField">
 						  <button type="button" id="btnSave" class="btn btn-lg btn-primary">Save</button>
-						  <label for="checkboxLearning">Learning view</label>
+                            <span class="hint">Name the document and hit Save before you start doing anything.</span>
+						  &nbsp; &nbsp;
+                            <label for="checkboxLearning">Learning view</label>
 						  <input type="checkbox" data-toggle="toggle" id="checkboxLearning">
 					  	</div>
 					</div>	
 				</div>
-				<div class="col-xs-12 col-md-8">
-					<div class="panel panel-primary">
-						<div class="panel-heading">Add new item to canvas</div>
-						<div class="panel-body">
-							<label for="newEntityField">Name of the item: </label>
-							<input id="newEntityField"> Hit enter or choose from suggestions
-						</div>
-					</div>	
-				</div>				
+
 			</div>
 			
 			<div class="row">
 			   <div class="col-xs-12 col-md-8">
 					<div class="panel panel-primary">
 						<div class="panel-heading">
-							Your sketch: 						
+							Your sketch: <span class="hint">Double-click the canvas to add a new thing.</span>
 						</div> 
 						<div class="panel-body" id="canvas" style="padding:0px"> </div>
 					</div>	
@@ -86,8 +80,16 @@
 				</div>
 		    </div>
 	    </div>
-	    
-	    
+
+		<div class="popover" id="newEntityWidget">
+				<h3 class="popover-title">Add new item to canvas</h3>
+				<div class="popover-content">
+					<label for="newEntityField">Name of the item: </label>
+					<input id="newEntityField"> <br/>
+					<span class="hint">Hit enter or choose from suggestions</span>
+				</div>
+		</div>
+
 	    <div class="popover" style="max-width: 30%"
     		 id="propertiesWidget" class="settingsPopUp">
     		 <div class="popover-content">

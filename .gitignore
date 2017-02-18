@@ -54,6 +54,9 @@ target/
 .buildpath
 .tern-project
 
+# idea webstorm stuff
+.idea/
+
 bs/
 png/
 *.ttl

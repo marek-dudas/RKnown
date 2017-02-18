@@ -19,7 +19,7 @@ var PathPlaceholder = {
 };
 
 var PathBuilder = {
-		init: function(a, b, steps) {
+		init: function(a, b, steps, reverseAt) {
 			this.i = 1;
 			this.limit = 10;
 			this.query = "SELECT * WHERE {"; 
@@ -29,10 +29,10 @@ var PathBuilder = {
 			this.objects = [];
 			this.links = [];
 			this.processed = false;
-			this.build(steps);
+			this.build(steps, reverseAt);
 			this.pathFound = false;
 		},
-		addStep: function(isEnd, reverse1, reverse2) {
+		addStep: function(isEnd, reverse1) {
 			var thisEnd = (isEnd)?(this.bigEnd):("?o"+(this.i));
 			var predicateHolder = "?l"+this.i;
 			
@@ -44,6 +44,7 @@ var PathBuilder = {
 			var strReverse2 = "?o"+(this.i+1)+" ?l"+(this.i+1)+"?o"+this.i+" . ";*/
 			
 			this.query += (reverse1)?strReverse1:strStraight1;
+			this.query += thisEnd + " <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> "+URIS.object+" .";
 			
 			var pathHolder = Object.create(PathPlaceholder);
 			if(reverse1) pathHolder.init(thisEnd, predicateHolder, this.currentEnd);
@@ -59,9 +60,9 @@ var PathBuilder = {
 		endQuery: function() {
 			this.query += " } LIMIT "+this.limit;
 		},
-		build: function(steps) {
+		build: function(steps, reverseAt) {
 			for(var i=1; i<=steps; i++) {
-				this.addStep(i==steps, false, false);
+				this.addStep(i==steps, i>=reverseAt);
 			}
 			SparqlFace.query(this.query, this.processResults.bind(this));
 		},

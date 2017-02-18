@@ -10,6 +10,9 @@ var SparqlFace = {
 			this.updateService.Service(RSettings.sparqlUpdateProxy, RSettings.sparqlUpdateEndpoint);
 			this.updateService.setMethod('POST');
 		},
+		getGraphName: function() {
+			return this.nameFromUri(this.currentGraph);
+		},
 		nameFromUri: function(uri) {
 			return uri.match("[^\/#]+$");
 		},
@@ -30,10 +33,13 @@ var SparqlFace = {
 			this.loadGraphCallback = callback;
 			this.currentGraph = graph;
 			var query = "SELECT DISTINCT * FROM <" + graph + "> WHERE {" +
-					"?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> ;" +
+					"?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type ;" +
 					"	<http://rknown.com/xcoord> ?x ;" +
 					"	<http://rknown.com/ycoord> ?y ;" +
-					"	<http://www.w3.org/2000/01/rdf-schema#label> ?label .}";
+					"	<http://www.w3.org/2000/01/rdf-schema#label> ?label ." +
+				"OPTIONAL {?a <http://rknown.com/predicate> ?predicateUri .}" +
+					"   FILTER(?type = <http://rknown.com/RKnownObject> || ?type = <http://rknown.com/RKnownRelation> )" +
+					"}";
 			this.query(query, this.saveObjectsAndContinue.bind(this));
 		},
 		saveLinksAndContinue: function(json) {
@@ -57,9 +63,10 @@ var SparqlFace = {
 			}
 			
 			var query = "SELECT DISTINCT * FROM <" +this.currentGraph+"> WHERE {" +
-					"?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> ;" +
+					"?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type ;" +
 					"	?predicate ?value ." +
 					"?predicate <http://www.w3.org/2000/01/rdf-schema#label> ?label . " +
+					"FILTER(?type = <http://rknown.com/RKnownObject> || ?type = <http://rknown.com/RKnownRelation> )" +
 					"FILTER(?predicate != <http://rknown.com/xcoord> && ?predicate != <http://rknown.com/ycoord> && ?predicate != <http://www.w3.org/2000/01/rdf-schema#label>)" +
 					"FILTER(isLiteral(?value))" +
 					"}";
@@ -116,15 +123,26 @@ var SparqlFace = {
 				var object = Object.create(Node);
 				var objUri = binding["a"].value;
 				var name = binding["label"].value;
-				object.init(objUri, name);
+				var type = "<"+binding["type"].value+">";
+
+				object.init(objUri, name, type);
+                if (typeof binding["predicateUri"] !== 'undefined') {
+                	var predicateUri = binding["predicateUri"].value;
+                	object.setPredicateUri(predicateUri);
+				}
 				object.x = parseFloat(binding["x"].value);
 				object.y = parseFloat(binding["y"].value);
 				this.objects.push(object);
 			}
 			var query = "SELECT ?a ?link ?b FROM <"+ this.currentGraph +"> WHERE {" +
-					"?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> ." +
+					"{?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> ." +
+					"?b <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownRelation> ." +
+					"?a ?link ?b .}" +
+					"UNION " +
+					"{?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownRelation> ." +
 					"?b <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> ." +
-					"?a ?link ?b . }";
+					"?a ?link ?b .}" +
+					"}";
 			this.query(query, this.saveLinksAndContinue.bind(this))
 		},
 		processObjectSuggestions: function(json) {
@@ -223,7 +241,12 @@ var SparqlFace = {
 			for(var i=1; i<RSettings.maxPathLength; i++) {
 				var builder = Object.create(PathBuilder);
 				this.builders.push(builder);
-				builder.init(a,b,i);
+				builder.init(a,b,i,i+1);
+				for(var j=1; j<=i; j++) {
+					var builder = Object.create(PathBuilder);
+					this.builders.push(builder);
+					builder.init(a,b,i,j);
+				}
 			}
 			/*var query1a = "SELECT * WHERE { " +
 					"<[a]> ?l1 <[b]> . }";

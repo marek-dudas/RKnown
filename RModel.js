@@ -1,5 +1,5 @@
 var Node = {
-		init: function(uri, name) {
+		init: function(uri, name, type) {
 			this.selected = false;
 			this.name = name;
 			this.uri = SparqlFace.stripBrackets(uri);
@@ -9,11 +9,18 @@ var Node = {
 			this.width = RSettings.nodeWidth;
 			this.height = RSettings.nodeHeight;
 			this.valuations = [];
+			this.type = URIS.object;
+            this.predicateUri = null;
+			if(type != null) this.type = type;
 		},
 		
 		brUri: function() {
 			return "<"+this.uri+">";
 		},
+
+	setPredicateUri: function(uri) {
+		this.predicateUri = uri;
+	},
 		
 		setTypeNode: function() {
 			this.typeNode = true;
@@ -23,19 +30,29 @@ var Node = {
 			return this.uri == node.uri;
 		},
 		
-		triplify: function() {
+		triplify: function(model) {
 			if(this.visible == false) return "";
-			var tripleString = "<"+this.uri+"> <http://rknown.com/xcoord> "+this.x+" . ";
-			tripleString += "<"+this.uri+"> <http://rknown.com/ycoord> "+this.y+" . ";
-			tripleString += "<"+this.uri+"> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> . ";
-			tripleString += "<"+this.uri+"> <http://www.w3.org/2000/01/rdf-schema#label> \""+this.name+"\" . ";
+			var tripleString = "<"+this.uri+"> <http://rknown.com/xcoord> "+this.x+" . \r\n";
+			tripleString += "<"+this.uri+"> <http://rknown.com/ycoord> "+this.y+" . \r\n";
+			tripleString += "<"+this.uri+"> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> "+this.type+" . \r\n";
+			tripleString += "<"+this.uri+"> <http://www.w3.org/2000/01/rdf-schema#label> \""+this.name+"\" . \r\n";
+            if(this.predicateUri!=null) {
+                tripleString += "<"+this.uri+"> <http://rknown.com/predicate> <"+this.predicateUri+"> . \r\n" +
+                    "<"+this.predicateUri+"> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty>;\r\n" +
+                      "<http://www.w3.org/2000/01/rdf-schema#label> \"" + this.name + "\" . \r\n" ;
+            }
+
 			
 			for(var i=0; i<this.valuations.length; i++) {
-				tripleString += "<"+this.uri+"> <"+this.valuations[i].predicate.uri+"> \""+this.valuations[i].value+"\" .";
-				tripleString += "<"+this.valuations[i].predicate.uri+"> <http://www.w3.org/2000/01/rdf-schema#label> \""+this.valuations[i].predicate.name+"\" ;" +
-						"				<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DataProperty> .";
+				tripleString += "<"+this.uri+"> <"+this.valuations[i].predicate.uri+"> \""+this.valuations[i].value+"\" .\r\n";
+				tripleString += "<"+this.valuations[i].predicate.uri+"> <http://www.w3.org/2000/01/rdf-schema#label> \""+this.valuations[i].predicate.name+"\" ;\r\n" +
+						"				<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DataProperty> . \r\n";
 			}
-			
+
+			if(this.type == URIS.relation) {
+			    var link = model.getRelationFor(this);
+			    if(link!=null) tripleString += link.triplify();
+            }
 			return tripleString;
 		},
 		
@@ -80,9 +97,27 @@ var Triple = {
 			return triple;			
 		},
 		str: function() {
-			return "<"+this.s+"> <"+this.p+ "> <"+this.o+"> .";
+			return "<"+this.s+"> <"+this.p+ "> <"+this.o+"> .\r\n";
 		}
 }
+
+/*
+var Link = {
+		init: function(start, end) {
+			this.start = start;
+			this.end = end;
+			this.source = start;
+			this.target = end;
+			this.from = start;
+			this.to = end;
+			this.right = true;
+			this.left = false;
+			this.id = -1;
+		},
+		dashed: function() {
+			return "";
+		}
+}*/
 
 var Link = {	
 		init: function(start, end, uri, name) {
@@ -105,12 +140,13 @@ var Link = {
 			var triples = Triple.create(this.start.uri, this.uri, this.end.uri).str();
 			triples += Triple.create(this.uri, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
 					"http://www.w3.org/2002/07/owl#ObjectProperty").str();
-			triples += "<"+this.uri+"> <http://www.w3.org/2000/01/rdf-schema#label> \""+this.name+"\" .";
+			triples += "<"+this.uri+"> <http://www.w3.org/2000/01/rdf-schema#label> \""+this.name+"\" .\r\n";
 			return triples;
 		},
 		setEnd: function(end) {
 			this.end = end;
 			this.target = end;
+			this.to = end;
 		},
 		setUri: function(uri) {
 			this.uri = uri;
@@ -120,13 +156,18 @@ var Link = {
 		},
 		dashed: function() {
 			return "";
-		}
+		},
+    connectedTo: function(node) {
+        if (this.start == node || this.end == node) return true;
+        else return false;
+    }
 }
 
 var RModel = {
 		init: function() {
 			this.links = [];
 			this.nodes = [];
+			this.relations = [];
 			this.idCounter = 10;
 			this.name = "";
 			this.oldId = null;
@@ -139,18 +180,29 @@ var RModel = {
 			this.nodes.push(node);
 		},
 		
-		removeNode: function(node) {  
-			for(var i=0; i<this.links.length; i++){
-				if(this.links[i].connectedTo(node)) {
-					this.links.splice(i,1);
-					i--;
-				}
-			}
-			this.nodes.splice(this.nodes.indexOf(node),1);
+		addSimpleLink: function(from, to) {
+			var link = Object.create(Link);
+			link.init(from, to, "<http://rknown.com/RKnownLink>", "");
+			link.id = this.idCounter++;
+			this.links.push(link);
+		},
+		
+		removeNode: function(node) {
+		    var index = this.nodes.indexOf(node);
+		    if(index>=0) {
+                for (var i = 0; i < this.links.length; i++) {
+                    if (this.links[i].connectedTo(node)) {
+                        this.links.splice(i, 1);
+                        i--;
+                    }
+                }
+                this.nodes.splice(this.nodes.indexOf(node), 1);
+            }
 		},
  
 		removeLink: function(link) {
-			this.links.splice(this.links.indexOf(link),1);
+		    var index = this.links.indexOf(link);
+			if(index>=0) this.links.splice(this.links.indexOf(link),1);
 			//this.updateBTypeLevels();
 		},
 
@@ -163,9 +215,32 @@ var RModel = {
 			}
 		},
 		
+		getEntityUriBase: function() {
+			return RSettings.uriBase;
+		},
+		
 		addLink: function(link) {
 			link.id = this.idCounter++;
 			this.links.push(link);
+		},
+		
+		addRelationLink: function(link) {
+			link.id = this.idCounter++;
+			var linkNode = Object.create(Node);
+			var linkNodeUri = this.getEntityUriBase() + SparqlFace.getGraphName() + "/" + 
+				SparqlFace.nameFromUri(link.from.uri) + "-" + SparqlFace.nameFromUri (link.uri) + "-" +
+				SparqlFace.nameFromUri(link.to.uri) + "-" + link.id;
+			linkNode.init(linkNodeUri, link.name, "<http://rknown.com/RKnownRelation>");
+			linkNode.setPredicateUri(link.uri);
+			var connection = Object.create(Link);
+			connection.init(link.from, link.to, "", "");
+			var middle = connection.getMiddlePoint();
+			linkNode.x = middle.x;
+			linkNode.y = middle.y;
+			this.addNode(linkNode);
+			this.addSimpleLink(link.from, linkNode);
+			this.addSimpleLink(linkNode, link.to);
+			this.relations.push(link);
 		},
 
 		getNodeById: function(id) {
@@ -183,17 +258,26 @@ var RModel = {
 		},
 		
 		linkExists: function(fromUri, toUri) {
+		    /*
 			for(var i=0; i<this.links.length; i++) {
 				if(this.links[i].from.uri == fromUri && this.links[i].to.uri == toUri) return true;
 			}
-			return false;
+			return false;*/
+		    for(var i=0; i<this.nodes.length; i++) {
+		        var node = this.nodes[i];
+		        if(node.type==URIS.relation) {
+		            var link = this.getRelationFor(node);
+                    if(link.from.uri == fromUri && link.to.uri == toUri) return true;
+                }
+            }
+            return false;
 		},
 		
 		addLinkByUris: function(linkUri, linkName, fromUri, toUri) {
 			if(!this.linkExists(fromUri, toUri)) {
 				var newLink = Object.create(Link);
 				newLink.init(this.getNodeByUri(fromUri), this.getNodeByUri(toUri), linkUri, linkName);
-				this.addLink(newLink);
+				this.addRelationLink(newLink);
 			}
 		},
 
@@ -204,7 +288,7 @@ var RModel = {
 		getRdf: function() {
 			var rdf = "";
 			for(var i=0; i<this.links.length; i++) rdf+=this.links[i].triplify();
-			for(var i=0; i<this.nodes.length; i++) rdf+=this.nodes[i].triplify();
+			for(var i=0; i<this.nodes.length; i++) rdf+=this.nodes[i].triplify(this);
 			return rdf;
 		},
 
@@ -219,5 +303,21 @@ var RModel = {
 		buildFromRdf: function(rdfData) {
 			
 		},
+
+		getRelationFor: function(node) {
+			var outgoing = null;
+			var incoming = null;
+			for(var i=0; i<this.links.length; i++) {
+				if(this.links[i].from == node && this.links[i].to.type==URIS.object) outgoing = this.links[i];
+                if(this.links[i].to == node && this.links[i].from.type == URIS.object) incoming = this.links[i];
+			}
+			if(incoming!=null&&outgoing!=null) {
+				var link = Object.create(Link);
+				link.init(incoming.start, outgoing.end, node.predicateUri, node.name);
+				return link;
+			}
+			else return null;
+		}
+
 };
 
