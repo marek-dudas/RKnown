@@ -59,6 +59,9 @@ target/
 
 bs/
 png/
+server/vendor/
 *.ttl
 test.ttl
 *test.html
+*.lock
+*.json

@@ -1,8 +1,14 @@
 <?php
 
+require_once 'user-check.php';
+
+
 // Unless we succeed we fail
-header('HTTP/1.1 500 Internal Server Error', true, 500);
+ header('HTTP/1.1 500 Internal Server Error', true, 500);
 error_reporting(E_ALL);
+
+$validator = new UserValidator();
+if(! $validator->isQueryForValidGraph($_REQUEST["query"]) ) die("Unauthorized access");
 
 
 /*****************************************************************************/

@@ -92,13 +92,16 @@ var RControl = {
 			SparqlFace.loadGraph(null, graphUri, this.showGraph.bind(this));
 		},
 		
-		showGraph: function(nodes, links) {
+		showGraph: function(model) {
 			this.model.empty();
 			this.view.updateView();			
-			this.model = Object.create(RModel);
-			this.model.init();
-			for(var i=0; i<nodes.length; i++) this.model.addNode(nodes[i]);
-			for(var i=0; i<links.length; i++) this.model.addLink(links[i]);
+			this.model = model;
+			/*
+            for(var i=0; i<types.length; i++) this.model.addType(types[i]);
+			for(var i=0; i<nodes.length; i++) {
+				this.model.addNode(nodes[i]);
+            }
+			for(var i=0; i<links.length; i++) this.model.addLink(links[i]);*/
 			RKnown.model = this.model;
 			this.view.setData(this.model);
 			this.view.updateView();
@@ -113,12 +116,12 @@ var RControl = {
 			newValuation.setPredicate(this.creationPredicate);
 			newValuation.setValue($('#literalValue').val());
 			this.selectedNode.addValuation(newValuation);
-			d3.select('#literalInput').style("visibility", "hidden");
+			d3.select('#literalInput').style("display", "none");
 			this.creationPredicate = null;
 			this.showPredicateSelection(false);
 		},
 		
-		addRelatedNodes: function(strings) {
+		addRelatedNodes: function(nodes) {
 			var x=RSettings.nodeWidth/2;
 			var y=RSettings.nodeHeight;
 			var svgWidth = this.view.getRelatedSvgWidth();
@@ -126,15 +129,17 @@ var RControl = {
 				x = this.relatedNodes[this.relatedNodes.length-1].x+RSettings.nodeWidth;
 				y = this.relatedNodes[this.relatedNodes.length-1].y+RSettings.nodeHeight;
 			}
-			for(var i=0; i<strings.length; i++) {
-				var nodeUri = strings[i];
-				if(this.model.getNodeByUri(nodeUri) == null) {
+			for(var i=0; i<nodes.length; i++) {
+				var node = nodes[i];
+				var isNew = true;
+				for(var j=0; j<this.relatedNodes.length; j++) {
+				    if(this.relatedNodes[j].uri == node.uri) isNew = false;
+                }
+				if(isNew && this.model.getNodeByUri(node.uri) == null) {
 					if(x+RSettings.nodeWidth/2>svgWidth) {
 						x=RSettings.nodeWidth/2;
 						y+=RSettings.nodeHeight;
 					}
-					var node = Object.create(Node);
-					node.init(nodeUri, SparqlFace.nameFromUri(nodeUri));
 					node.x=x;
 					node.y=y;
 					x+=RSettings.nodeWidth;
@@ -194,6 +199,7 @@ var RControl = {
         var mousePos = d3.mouse(document.body);
         d3Sel.style("left", mousePos[0]+"px");
         d3Sel.style("top", mousePos[1]+"px");
+        return mousePos;
     },
 		
 		predicateSelected: function(predicate) {
@@ -232,7 +238,8 @@ var RControl = {
 			this.view.updateView();
 		},
 		
-		setTypeFromField: function() {
+		setTypeFromField: function(type) {
+		/*
 			var node = Object.create(Node);
 			var nodeName = $(this.typeInputFielId).val();
 			node.init(this.createUriFromName(nodeName), nodeName);
@@ -244,7 +251,14 @@ var RControl = {
 			
 			var link = Object.create(Link);
 			link.init(this.selectedNode, node, "rdf:type", "is");
-			this.model.addLink(link);
+			this.model.addLink(link); */
+
+		//if(type==null) {
+			type = Object.create(RType);
+			type.init(this.createUriFromName($(this.typeInputFielId).val()), $(this.typeInputFielId).val(), null);
+		//}
+
+			this.model.addTypeToNode(this.selectedNode, type);
 			this.showTypeSelection(false);
 			this.view.updateView();
 			
@@ -344,10 +358,19 @@ var RControl = {
 		
 		valuationMouseOver: function(valuation) {
 			if(valuation.value.startsWith('http')) {
-				d3.select('#webInfo').style("display", "block")
-					.style("left", $('#suggestions').offset().left+20+"px")
-					.style("top", $('#suggestions').offset().top+20+"px");
 				d3.select('#webFrame').attr('src', valuation.value);
+				var mousePos = this.moveToMousePos(d3.select('#webInfo'));
+				var winHeight = $(window).height();
+				var winWidth = $(window).width();
+                var webHeight = winHeight-mousePos[1]-12;
+                var webWidth = $(window).width()-mousePos[0]-12;
+                if(webHeight<winHeight/3.0) webHeight = winHeight/3;
+                if(webWidth<winWidth/3.0) webWidth = winWidth/3;
+                d3.select('#webInfo').style("display", "block")
+                    .style("width", webWidth+"px")
+                    .style("height", webHeight+"px")
+                    .style("top",(winHeight-webHeight)+"px")
+                    .style("left",(winWidth-webWidth)+"px");
 			}
 			else d3.select('#webInfo').style("display", "none");
 		},
@@ -376,11 +399,19 @@ var RControl = {
 				if(node.valuations.length > 0) 
 					this.view.showNodeProperties(node);
 				else this.hideNodeProperties();
+				if(node.types.length > 0)
+					this.view.showNodeTypes(node);
+				else this.hideNodeTypes();
+
 			}
 		},
 		
 		hideNodeProperties: function() {
 			d3.select('#propertiesWidget').style("display", "none");
+		},
+
+		hideNodeTypes: function() {
+			d3.select('#typesWidget').style("display", "none");
 		},
 		
 		/*showLinkButton: function(node) {

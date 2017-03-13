@@ -159,8 +159,11 @@ SPARQL.Service = function(endpoint, remoteEndpoint) {
     this.output = function() { return _output; };
 	this.maxSimultaneousQueries = function() { return _max_simultaneous; };
 	this.requestHeaders = function() { return _request_headers; };
+
+	this.token = "";
+	this.setToken = function(token) {this.token = token;};
 	
-	this.remoteEndpoint = function() { return _remote_endpoint;}
+	this.remoteEndpoint = function() { return _remote_endpoint;};
 	
 	//---------
 	// mutators
@@ -256,6 +259,8 @@ SPARQL.Query = function(service, priority) {
 	var _output = service.output();
 	var _priority = priority || 0;
 	var _request_headers = clone_obj(service.requestHeaders());
+
+	var _user_token = service.token;
 
 	//------------------
 	// private functions
@@ -442,6 +447,9 @@ SPARQL.Query = function(service, priority) {
 			urlQueryString += 'format='+encodeURIComponent('application/sparql-results+json')+'&';
 			urlQueryString += 'Accept='+encodeURIComponent('application/sparql-results+json')+'&';
 		}
+
+		urlQueryString += "token="+_user_token+'&';
+
 		return urlQueryString + 'query=' + encodeURIComponent(this.queryString());
 	}
 	

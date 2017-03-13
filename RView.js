@@ -78,12 +78,11 @@ var RView = {
 			var zoomListener = d3.behavior.zoom()
 			  .scaleExtent([0.1, 2])
 			  .on("zoom", this.zoomHandler.bind(this));
-			  //.on("dblclick.zoom", function(){});
-			
 			// function for handling zoom event			
 					
 			zoomListener(this.rootSvg);
-			this.rootSvg.on("dblclick.zoom", null);
+			this.rootSvg.on("dblclick.zoom", null)
+				.on("touchstart.zoom",this.touchstart.bind(this));
 			
 		    this.canvas = this.svg.append("svg:g");
 		    
@@ -111,7 +110,19 @@ var RView = {
 			//$(window).resize(this.updateSize.bind(this));
 			
 			window.addEventListener('load', updateSize);
+
+            this.last_touch_time = undefined;
 		},
+
+	touchstart: function() {
+		var touch_time = d3.event.timeStamp;
+		if (touch_time-last_touch_time < 500 && d3.event.touches.length===1) {
+			d3.event.stopPropagation();
+			this.last_touch_time = undefined;
+			RKnown.control.dblClick(d3.mouse(d3.mouse(RKnown.view.svg.node())));
+		}
+		this.last_touch_time = touch_time;
+	},
 		
 		learningStateSet: function() {
 			return $('#checkboxLearning').is(':checked');
@@ -120,7 +131,8 @@ var RView = {
 		getRelatedSvgWidth: function() {
 			return this.relatedSvg.node().getBoundingClientRect().width;
 		},
-		
+
+	/*
 		updateSize: function() {
 			var currentSize = this.viewingElement.node().getBoundingClientRect();
 			var height = $(window).height();
@@ -130,7 +142,7 @@ var RView = {
 			
 			var currentSize = this.relatedCanvas.node().getBoundingClientRect();
 			this.relatedSvg.attr("width", currentSize.width).attr("height", height);
-		},
+		},*/
 		
 		updateGraphList: function() {
 			this.graphs = this.graphs.data(RKnown.control.graphs);
@@ -151,72 +163,38 @@ var RView = {
 		},
 
 		createLiteralButton: function() {
-			/*var arc = d3.svg.symbol().type('triangle-up');
-
-			this.literalButton = this.canvas.append('path')
-			.attr('d',arc)
-			.attr('fill', '#a00')
-			.attr('stroke','#000')
-			.attr('stroke-width',1)
-			.style("visibility", "hidden")
-			.on("click", RKnown.control.literalButtonClick.bind(RKnown.control));*/
-			
 			this.literalButton = this.canvas.append("image")
 		    .attr("xlink:href", "png/glyphicons-31-pencil.png")
 			.style("visibility", "hidden")
+            .attr('width', 24)
+            .attr('height', 24)
 			.on("click", RKnown.control.literalButtonClick.bind(RKnown.control));
 		},
 		
 		createLinkButton: function() {
-			/*var arc = d3.svg.symbol().type('triangle-up');
-
-			this.linkButton = this.canvas.append('path')
-			.attr('d',arc)
-			.attr('fill', '#0a0')
-			.attr('stroke','#000')
-			.attr('stroke-width',1)
-			.style("visibility", "hidden")
-			.on("click", RKnown.control.linkButtonClick.bind(RKnown.control));*/
-			
 			this.linkButton = this.canvas.append("image")
 			    .attr("xlink:href", "png/glyphicons-212-arrow-right.png")
 				.style("visibility", "hidden")
+                .attr('width', 20)
+                .attr('height', 18)
 				.on("click", RKnown.control.linkButtonClick.bind(RKnown.control));
 		},
 
 		createTypeButton: function() {
-			/*var arc = d3.svg.symbol().type('triangle-down');
-
-			this.typeButton = this.canvas.append('path')
-			.attr('d',arc)
-			.attr('fill', '#00a')
-			.attr('stroke','#000')
-			.attr('stroke-width',1)
-			.style("visibility", "hidden")
-			.on("click", RKnown.control.typeButtonClick.bind(RKnown.control));*/
-			
 			this.typeButton = this.canvas.append("image")
 		    .attr("xlink:href", "png/glyphicons-501-education.png")
 			.style("visibility", "hidden")
+                .attr('width', 27)
+                .attr('height', 19)
 			.on("click", RKnown.control.typeButtonClick.bind(RKnown.control));
 		},
 
-
-
     createDeleteNodeButton: function() {
-		/*var arc = d3.svg.symbol().type('triangle-down');
-
-		 this.typeButton = this.canvas.append('path')
-		 .attr('d',arc)
-		 .attr('fill', '#00a')
-		 .attr('stroke','#000')
-		 .attr('stroke-width',1)
-		 .style("visibility", "hidden")
-		 .on("click", RKnown.control.typeButtonClick.bind(RKnown.control));*/
-
         this.delButton = this.canvas.append("image")
             .attr("xlink:href", "png/glyphicons-208-remove.png")
             .style("visibility", "hidden")
+			.attr('width', 18)
+			.attr('height', 18)
             .on("click", RKnown.control.delButtonClick.bind(RKnown.control));
     },
 		/*
@@ -248,12 +226,13 @@ var RView = {
 			var scale = 1 - ( (1 - d3.event.scale) * 0.1 );
 		  this.svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
 		},
-		
+
+	/*
 		updateSize: function() {
 			var currentSize = this.viewingElement.node().getBoundingClientRect();
 			this.rootSvg.attr("width", currentSize.width - 12).attr("height", currentSize.height - 12);
 			if(this.layout) this.layout.size([currentSize.width-12, currentSize.height-12]);
-		},
+		},*/
 		
 		startLayout: function() {
 			this.tickCounter = 0;
@@ -432,6 +411,20 @@ var RView = {
 				.on('mouseover', function(d){RKnown.control.valuationMouseOver(d);})
 			lines.append('td').text(function(d){return d.value});
 			properties.call(makeLinks);
+
+		},
+
+		showNodeTypes: function(node) {
+            d3.select('#typesWidget').style("display", "block")
+                .style("left", d3.mouse(d3.select("body").node())[0]-50+"px")
+                .style("top", d3.mouse(d3.select("body").node())[1]+10+"px");
+            d3.select('#typesTable').selectAll('tr').remove();
+            var types = d3.select('#typesTable').selectAll('tr');
+            types = types.data(node.types);
+            var lines = types.enter()
+                .append('tr').append('td')
+				.style('color', function(d) {return d.color})
+				.text(function(d){return '#'+d.label});;
 		},
 		
 		updateView: function() {
@@ -534,14 +527,15 @@ var RView = {
 		    		})
 			        .call(node_drag)
 			        .classed("node",function(d) {return d.type != "<http://rknown.com/RKnownRelation>";})
+
 			        .classed("relationNode", function(d) {return d.type == "<http://rknown.com/RKnownRelation>";})
 			        .style("visibility", function(d) {return d.visible?"visible":"hidden";}); 
 			        //.append("Scircle")
 			        //.attr("r", 10)
 			    nodesEnter.append("path")
 			        .attr("d", function(d) {
-			        	return d.getPathData();});	        	
-			        //.style("fill", "#ccc");
+			        	return d.getPathData();})
+            		.style("fill", function(d) {return d.color;});
 			        
 			    nodesEnter.append("text")
 			    	.classed("nodename", true)
@@ -555,7 +549,9 @@ var RView = {
 				     .attr("dy", ".35em");
 				 	 
 				 this.nodes.selectAll(".nodename").text(function(d) {return d.name;});   
-				 this.nodes.selectAll("path").classed("selected", function(d) {return d.selected;});
+				 this.nodes.selectAll("path")
+					 .classed("selected", function(d) {return d.selected;})
+                     .style("fill", function(d) {return d.color;});
 				this.nodes.exit().remove();
 		    
 		    if(this.layoutRunning) this.layout.start();

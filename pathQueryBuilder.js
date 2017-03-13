@@ -44,7 +44,7 @@ var PathBuilder = {
 			var strReverse2 = "?o"+(this.i+1)+" ?l"+(this.i+1)+"?o"+this.i+" . ";*/
 			
 			this.query += (reverse1)?strReverse1:strStraight1;
-			this.query += thisEnd + " <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> "+URIS.object+" .";
+			this.query += thisEnd + " "+ URIS.rKnownTypePredicate + " "+URIS.object+" .";
 			
 			var pathHolder = Object.create(PathPlaceholder);
 			if(reverse1) pathHolder.init(thisEnd, predicateHolder, this.currentEnd);

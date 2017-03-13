@@ -1,17 +1,21 @@
 var RSettings = {
-		sparqlProxy: "server/sparql-proxy.php",
-		sparqlEndpoint: "http://localhost:8080/openrdf-sesame/repositories/rknown",
-		sparqlUpdateProxy: "server/sparql-update-proxy.php",
-		sparqlUpdateEndpoint: "http://localhost:8080/openrdf-sesame/repositories/rknown/statements",
 		nodeWidth: 100,
 		nodeHeight: 40,
 		relatedNodesCanvasWidth: 320,
 		uriBase: "http://rknown.com/data/",
-		maxPathLength: 5
-
+		maxPathLength: 5,
+		suggestionsLimit: 10,
+		defaultNodeColor: "#ddd"
 }
 
 var URIS = {
     relation: "<http://rknown.com/RKnownRelation>",
-	object: "<http://rknown.com/RKnownObject>"
+	object: "<http://rknown.com/RKnownObject>",
+	type: "<http://rknown.com/RKnownType>",
+	rKnownTypePredicate: "<http://rknown.com/type>",
+	mainTypePredicate: "<http://rknown.com/mainType>",
+	colorPredicate: "<http://rknown.com/color>",
+	rdfType: '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>',
+	rdfsClass: "<http://www.w3.org/2000/01/rdf-schema#Class>",
+	rdfsLabel: "<http://www.w3.org/2000/01/rdf-schema#label>"
 }

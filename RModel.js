@@ -10,8 +10,21 @@ var Node = {
 			this.height = RSettings.nodeHeight;
 			this.valuations = [];
 			this.type = URIS.object;
+			this.types = [];
             this.predicateUri = null;
+            this.color = RSettings.defaultNodeColor;
+            this.mainType = null;
 			if(type != null) this.type = type;
+		},
+
+		addType: function(type) {
+			typeExists = false;
+			for(var i=0; i<this.types.length; i++) if(this.types[i].uri == type.uri) typeExists = true;
+			if(typeExists == false && this.types.length == 0 && this.color == RSettings.defaultNodeColor) {
+                this.color = type.color;
+                this.mainType = type;
+            }
+			if(typeExists == false) this.types.push(type);
 		},
 		
 		brUri: function() {
@@ -34,7 +47,7 @@ var Node = {
 			if(this.visible == false) return "";
 			var tripleString = "<"+this.uri+"> <http://rknown.com/xcoord> "+this.x+" . \r\n";
 			tripleString += "<"+this.uri+"> <http://rknown.com/ycoord> "+this.y+" . \r\n";
-			tripleString += "<"+this.uri+"> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> "+this.type+" . \r\n";
+			tripleString += "<"+this.uri+"> " + URIS.rKnownTypePredicate + " " +this.type+" . \r\n";
 			tripleString += "<"+this.uri+"> <http://www.w3.org/2000/01/rdf-schema#label> \""+this.name+"\" . \r\n";
             if(this.predicateUri!=null) {
                 tripleString += "<"+this.uri+"> <http://rknown.com/predicate> <"+this.predicateUri+"> . \r\n" +
@@ -42,6 +55,13 @@ var Node = {
                       "<http://www.w3.org/2000/01/rdf-schema#label> \"" + this.name + "\" . \r\n" ;
             }
 
+            if(this.mainType != null) {
+            	tripleString +=  "<"+this.uri+"> " + URIS.mainTypePredicate + " <" + this.mainType.uri + "> . ";
+			}
+
+			for(var i=0; i<this.types.length; i++) {
+            	tripleString += "<"+this.uri+"> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <"+this.types[i].uri+"> . \r\n";
+            }
 			
 			for(var i=0; i<this.valuations.length; i++) {
 				tripleString += "<"+this.uri+"> <"+this.valuations[i].predicate.uri+"> \""+this.valuations[i].value+"\" .\r\n";
@@ -87,9 +107,9 @@ var Valuation = {
 
 var Triple = {
 		init: function(subject, predicate, object) {
-			this.s = subject;
-			this.p = predicate;
-			this.o = object;
+			this.s = SparqlFace.stripBrackets(subject);
+			this.p = SparqlFace.stripBrackets(predicate);
+			this.o = SparqlFace.stripBrackets(object);
 		},
 		create: function(subject, predicate, object) {
 			var triple = Object.create(Triple);
@@ -97,7 +117,9 @@ var Triple = {
 			return triple;			
 		},
 		str: function() {
-			return "<"+this.s+"> <"+this.p+ "> <"+this.o+"> .\r\n";
+			if(this.o.match(/^".*"$/g)!=null)
+                return "<"+this.s+"> <"+this.p+ "> "+this.o+" .\r\n";
+			else return "<"+this.s+"> <"+this.p+ "> <"+this.o+"> .\r\n";
 		}
 }
 
@@ -133,8 +155,8 @@ var Link = {
 			this.id = -1;
 			this.name = name;
 			this.uri = SparqlFace.stripBrackets(uri);
-			this.startUri;
-			this.endUri;
+			/*this.startUri;
+			this.endUri;*/
 		},
 		triplify: function() {
 			var triples = Triple.create(this.start.uri, this.uri, this.end.uri).str();
@@ -163,6 +185,26 @@ var Link = {
     }
 }
 
+var RType = {
+	init: function(uri, label, color) {
+		this.uri = uri;
+		this.label = label;
+		this.color = color;
+	},
+	setColor: function(color) {
+		this.color = color;
+	},
+	getColor: function() {
+		return this.color;
+	},
+	triplify: function() {
+		var triples = Triple.create(this.uri, URIS.rdfType, URIS.rdfsClass).str();
+		triples += Triple.create(this.uri, URIS.rdfsLabel, "\""+this.label+"\"").str();
+		triples += Triple.create(this.uri, URIS.colorPredicate, "\""+this.color+"\"").str();
+		return triples;
+	}
+}
+
 var RModel = {
 		init: function() {
 			this.links = [];
@@ -173,6 +215,27 @@ var RModel = {
 			this.oldId = null;
 			this.vocabs = [];
 			this.created = Date.now();
+			this.types = [];
+			this.typeColors = d3.scale.category20();
+		},
+
+		addType: function(type) {
+			this.types.push(type);
+		},
+
+		addTypeToNode: function(node, type) {
+			var color = null;
+			for(var i=0; i<this.types.length; i++) {
+				if(this.types[i].uri == type.uri) {
+					color = this.types[i].color;
+				}
+			}
+			if(color == null) {
+				color = this.typeColors(this.types.length % 20);
+				this.types.push(type);
+			}
+			type.setColor(color);
+			node.addType(type);
 		},
 
  		addNode: function(node) {
@@ -289,6 +352,7 @@ var RModel = {
 			var rdf = "";
 			for(var i=0; i<this.links.length; i++) rdf+=this.links[i].triplify();
 			for(var i=0; i<this.nodes.length; i++) rdf+=this.nodes[i].triplify(this);
+            for(var i=0; i<this.types.length; i++) rdf+=this.types[i].triplify();
 			return rdf;
 		},
 

@@ -6,9 +6,11 @@ var SparqlFace = {
 			this.queryService = Object.create(SPARQL);
 			this.queryService.Service(RSettings.sparqlProxy, RSettings.sparqlEndpoint);
 			this.queryService.setMethod('GET');
-			this.updateService = Object.create(SPARQL);
-			this.updateService.Service(RSettings.sparqlUpdateProxy, RSettings.sparqlUpdateEndpoint);
-			this.updateService.setMethod('POST');
+			this.queryService.setToken(RKnown.userToken);
+			this.userDbService = Object.create(SPARQL);
+            this.userDbService.Service(RSettings.sparqlProxy, RSettings.userDbEndpoint);
+            this.userDbService.setMethod('GET');
+            this.userDbService.setToken(RKnown.userToken);
 		},
 		getGraphName: function() {
 			return this.nameFromUri(this.currentGraph);
@@ -30,20 +32,46 @@ var SparqlFace = {
 			});			
 		},
 		loadGraph: function(user, graph, callback) {
-			this.loadGraphCallback = callback;
-			this.currentGraph = graph;
-			var query = "SELECT DISTINCT * FROM <" + graph + "> WHERE {" +
-					"?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type ;" +
+            this.loadGraphCallback = callback;
+            this.currentGraph = graph;
+            this.model = Object.create(RModel);
+            this.model.init();
+
+            var query = "SELECT DISTINCT * FROM <" + graph + "> WHERE {" +
+                "?a "+ URIS.rdfType + " "+URIS.rdfsClass + " ; " +
+				    URIS.colorPredicate + " ?color ; " +
+                "	<http://www.w3.org/2000/01/rdf-schema#label> ?label ." +
+                "}";
+            this.query(query, this.saveTypesAndContinue.bind(this));
+        },
+
+		saveTypesAndContinue: function(json) {
+            for(var j=0; j<json.results.bindings.length; j++) {
+                var binding = json.results.bindings[j];
+                var typeUri = binding["a"].value;
+                var typeLabel = binding["label"].value;
+                var typeColor = binding["color"].value;
+                var type = Object.create(RType);
+                type.init(typeUri, typeLabel, typeColor);
+                this.model.addType(type);
+            }
+
+			var query = "SELECT DISTINCT * FROM <" + this.currentGraph + "> WHERE {" +
+					"?a "+ URIS.rKnownTypePredicate + " ?type ;" +
 					"	<http://rknown.com/xcoord> ?x ;" +
 					"	<http://rknown.com/ycoord> ?y ;" +
 					"	<http://www.w3.org/2000/01/rdf-schema#label> ?label ." +
 				"OPTIONAL {?a <http://rknown.com/predicate> ?predicateUri .}" +
+				"OPTIONAL {?a " + URIS.mainTypePredicate + " ?mainRdfType . " +
+						"?mainRdfType "+ URIS.rdfType + " "+URIS.rdfsClass + " ; " +
+						URIS.colorPredicate + " ?color ; " +
+            			"<http://www.w3.org/2000/01/rdf-schema#label> ?rdfTypeLabel . }" +
 					"   FILTER(?type = <http://rknown.com/RKnownObject> || ?type = <http://rknown.com/RKnownRelation> )" +
 					"}";
 			this.query(query, this.saveObjectsAndContinue.bind(this));
 		},
 		saveLinksAndContinue: function(json) {
-			this.links = [];
+			//this.links = [];
 			for(var j=0; j<json.results.bindings.length; j++) {
 				var binding = json.results.bindings[j];
 				var linkUri =  binding["link"].value;
@@ -51,19 +79,19 @@ var SparqlFace = {
 				var endUri =  binding["b"].value;
 				var start = null;
 				var end = null;
-				for(var i=0; i<this.objects.length; i++) {
-					if(this.objects[i].uri==startUri) start = this.objects[i];
-					if(this.objects[i].uri==endUri) end = this.objects[i];
+				for(var i=0; i<this.model.nodes.length; i++) {
+					if(this.model.nodes[i].uri==startUri) start = this.model.nodes[i];
+					if(this.model.nodes[i].uri==endUri) end = this.model.nodes[i];
 				}
 				if(start!=null && end!=null) {
 					var link = Object.create(Link);
 					link.init(start, end, linkUri, this.nameFromUri(linkUri));
-					this.links.push(link);
+					this.model.addLink(link);
 				}
 			}
 			
 			var query = "SELECT DISTINCT * FROM <" +this.currentGraph+"> WHERE {" +
-					"?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?type ;" +
+					"?a " + URIS.rKnownTypePredicate + " ?type ;" +
 					"	?predicate ?value ." +
 					"?predicate <http://www.w3.org/2000/01/rdf-schema#label> ?label . " +
 					"FILTER(?type = <http://rknown.com/RKnownObject> || ?type = <http://rknown.com/RKnownRelation> )" +
@@ -107,17 +135,41 @@ var SparqlFace = {
 				predicate.init(predicateUri, predicateName);
 				valuation.setPredicate(predicate);
 				valuation.setValue(value);
-				for(var i=0; i<this.objects.length; i++) {
-					if(this.objects[i].uri == objUri) {
-						this.objects[i].addValuation(valuation);
-					}
-				}
+				var node = this.model.getNodeByUri(objUri);
+				if(node!=null) node.addValuation(valuation);
 			}
-			this.loadGraphCallback(this.objects, this.links);
+
+            var query = "SELECT DISTINCT * FROM <" +this.currentGraph+"> WHERE {" +
+                "?a " + URIS.rKnownTypePredicate + " ?type ;" +
+                  	URIS.rdfType + " ?rdfType ." +
+                "?rdfType "+URIS.rdfType+ " "+ URIS.rdfsClass + " ;" +
+					URIS.rdfsLabel + " ?label; " +
+					URIS.colorPredicate + " ?color ." +
+                "FILTER(?type = <http://rknown.com/RKnownObject> || ?type = <http://rknown.com/RKnownRelation> )" +
+              "}";
+
+            this.query(query, this.saveTypesForNodesAndContinue.bind(this));
+
+			//this.loadGraphCallback(this.model);
 		},
-		
+    saveTypesForNodesAndContinue: function(json){
+        for(var j=0; j<json.results.bindings.length; j++) {
+            var binding = json.results.bindings[j];
+            var objUri = binding["a"].value;
+            var label = binding["label"].value;
+            var color = binding["color"].value;
+            var typeUri = binding["rdfType"].value;
+            var nodeType = Object.create(RType);
+            nodeType.init(typeUri, label, color);
+            var node = this.model.getNodeByUri(objUri);
+            if(node!=null) node.addType(nodeType);
+        }
+
+        this.loadGraphCallback(this.model);
+	},
+
 		saveObjectsAndContinue: function(json) {
-			this.objects = [];
+			//this.objects = [];
 			for(var j=0; j<json.results.bindings.length; j++) {
 				var binding = json.results.bindings[j];
 				var object = Object.create(Node);
@@ -130,18 +182,30 @@ var SparqlFace = {
                 	var predicateUri = binding["predicateUri"].value;
                 	object.setPredicateUri(predicateUri);
 				}
+				if (typeof binding["mainRdfType"] !== 'undefined') {
+                    var label = binding["rdfTypeLabel"].value;
+                    var color = binding["color"].value;
+                    var typeUri = binding["mainRdfType"].value;
+                    var nodeType = Object.create(RType);
+                    nodeType.init(typeUri, label, color);
+                    object.addType(nodeType);
+				}
 				object.x = parseFloat(binding["x"].value);
 				object.y = parseFloat(binding["y"].value);
-				this.objects.push(object);
+				this.model.addNode(object);
 			}
 			var query = "SELECT ?a ?link ?b FROM <"+ this.currentGraph +"> WHERE {" +
-					"{?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> ." +
-					"?b <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownRelation> ." +
+					"{?a "+ URIS.rKnownTypePredicate + " <http://rknown.com/RKnownObject> ." +
+					"?b "+ URIS.rKnownTypePredicate + " <http://rknown.com/RKnownRelation> ." +
 					"?a ?link ?b .}" +
 					"UNION " +
-					"{?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownRelation> ." +
-					"?b <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> ." +
+					"{?a "+ URIS.rKnownTypePredicate + " <http://rknown.com/RKnownRelation> ." +
+					"?b "+ URIS.rKnownTypePredicate + " <http://rknown.com/RKnownObject> ." +
 					"?a ?link ?b .}" +
+                "UNION " +
+                "{?a "+ URIS.rKnownTypePredicate + " <http://rknown.com/RKnownRelation> ." +
+                "?b "+ URIS.rKnownTypePredicate + " <http://rknown.com/RKnownRelation> ." +
+                "?a ?link ?b .}" +
 					"}";
 			this.query(query, this.saveLinksAndContinue.bind(this))
 		},
@@ -154,7 +218,16 @@ var SparqlFace = {
 			this.predicateSuggestionCallback(results);			
 		},
 		processRelatedNodes: function(json) {
-			var results = this.getAllBindings(json, "a");
+			var results = []; //this.getAllBindings(json, "a");
+            for(var j=0; j<json.results.bindings.length; j++) {
+                var binding = json.results.bindings[j];
+                var object = Object.create(Node);
+                var objUri = binding["a"].value;
+                var name = binding["label"].value;
+                object.init(objUri, name, URIS.object);
+                results.push(object);
+            }
+
 			this.relatedCallback(results);			
 		},
 		getAllBindings: function(json, placeholder) {
@@ -166,15 +239,20 @@ var SparqlFace = {
 			return results;
 		},
 		getGraphs: function(callback) {
-			var query = "SELECT DISTINCT ?graph WHERE { graph ?graph {?s ?p ?o.}}";
-			this.runQuery(query, "Getting graphs failed.", function(json){callback(SparqlFace.getAllBindings(json, "graph"))})
+			var queryText = "SELECT DISTINCT ?graph WHERE { ?graph <http://purl.org/dc/terms/creator> \""+RKnown.userEmail+"\" .}"; //graph ?graph {?s ?p ?o.}
+
+            var query = this.userDbService.createQuery();
+            query.query(queryText, {failure: function(){alert("Getting graphs failed.")},
+                success: function(json){callback(SparqlFace.getAllBindings(json, "graph"))}});
+
+			//this.runQuery(query, "Getting graphs failed.", function(json){callback(SparqlFace.getAllBindings(json, "graph"))})
 		},
 		textSearch: function(text, type, callback) {
 			this.textSearchCallback = callback;
 			var searchQuery = "SELECT ?a ?label WHERE " +
 					"{ ?a <http://www.w3.org/2000/01/rdf-schema#label> ?label ." +
-					"  ?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> "+type+" . " +
-					" FILTER(contains(?a, \""+text+"\") || contains(?label, \""+text+"\")) }";
+					"  ?a "+URIS.rKnownTypePredicate+" "+type+" . " +
+					" FILTER(contains(LCASE(?a), LCASE(\""+text+"\")) || contains(LCASE(?label), LCASE(\""+text+"\"))) } LIMIT "+RSettings.suggestionsLimit;
 			
 			var query = this.queryService.createQuery();
 			query.query(searchQuery, {failure: function(){alert("Search failed - query failure")}, 
@@ -207,14 +285,18 @@ var SparqlFace = {
 		},
 		getRelatedNodes: function(node) {
 			var b = "<"+node.uri+">"
-			var searchQuery = "SELECT DISTINCT ?a WHERE { {?a ?pred "+b+"} UNION {"+b+" ?pred ?a} UNION {?a ?pred1 ?c. ?c ?pred2 "+b+".} UNION {"+b+" ?pred1 ?c. ?c ?pred2 ?a.}" +
-					"?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rknown.com/RKnownObject> . }";
+			var searchQuery = "SELECT DISTINCT ?a ?label WHERE { {?a ?pred "+b+"} " +
+				"UNION {"+b+" ?pred ?a} UNION {?a ?pred1 ?c. ?c ?pred2 "+b+".} " +
+                "UNION {"+b+" ?pred1 ?c. ?c ?pred2 ?a.}" +
+                "?a "+URIS.rKnownTypePredicate+" "+URIS.object+" . " +
+                "?a <http://www.w3.org/2000/01/rdf-schema#label> ?label .} " +
+                "LIMIT"+RSettings.suggestionsLimit;
 			this.runQuery(searchQuery, "Getting related nodes failed - query failure", this.processRelatedNodes.bind(this));
 		},
 		clearThenLoad: function() {
 			var updateQuery = "CLEAR GRAPH <"+ this.currentGraph +">";
 			
-			$.get("server/sesame-proxy.php?query="+encodeURIComponent(updateQuery), null, this.runLoadQuery.bind(this));
+			$.get("server/sesame-proxy.php?token="+RKnown.userToken+"&query="+encodeURIComponent(updateQuery), null, this.runLoadQuery.bind(this));
 				
 			/*
 			var query = this.updateService.createQuery();
@@ -222,10 +304,9 @@ var SparqlFace = {
 				success: this.runLoadQuery.bind(this)});*/
 		},
 		runLoadQuery: function() {
-			var query = this.updateService.createQuery();	
-			var updateQuery = "LOAD <http://localhost/rknown/server/test.ttl> INTO GRAPH <"+ this.currentGraph +">"
+			var updateQuery = "LOAD <http://localhost/rknown/server/graphs/test.ttl> INTO GRAPH <"+ this.currentGraph +">"
 				
-			$.get("server/sesame-proxy.php?query="+encodeURIComponent(updateQuery), null, this.graphSavedCallback);
+			$.get("server/sesame-proxy.php?query="+encodeURIComponent(updateQuery)+"&token="+RKnown.userToken, null, this.graphSavedCallback);
 				
 			/*query.query(updateQuery, {failure: function(){alert("Saving graph failed - query failure")}, 
 				success: function(json) {
