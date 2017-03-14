@@ -265,7 +265,7 @@ var SparqlFace = {
 				var object = Object.create(Node);
 				var objUri = binding["a"].value;
 				var objName = binding["label"].value;
-				object.init(objUri, objName);
+				object.init(objUri, objName, null);
 				this.objects.push(object);
 			}
 			this.textSearchCallback(this.objects);

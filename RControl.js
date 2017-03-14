@@ -57,6 +57,9 @@ var RControl = {
 			
 			$(this.typeInputFielId).bind("enterKey", this.setTypeFromField.bind(this));
 			$(this.typeInputFielId).keyup(function(e){
+                d3.select("#suggestionsWidget").style("left", $(this).offset().left+"px")
+                    .style("top", ($(this).offset().top + $(this).outerHeight()) + "px");
+                RKnown.control.showTypeSuggestions();
 			    if(e.keyCode == 13)
 			    {
 			        $(this).trigger("enterKey");
@@ -67,6 +70,16 @@ var RControl = {
 			
 			this.showAllGraphs();
 		},
+
+	showTypeSuggestions: function() {
+		var userInput = $(this.typeInputFielId).val();
+		var suggestedTypes = [];
+		for(var i=0; i<this.model.types.length; i++) {
+			var type = this.model.types[i];
+			if(type.label.includes(userInput)) suggestedTypes.push(type);
+		}
+		this.view.updateTypeSuggestions(suggestedTypes);
+	},
 		
 		learningCBChanged: function() {
 			this.view.layoutRunning = this.view.learningStateSet();
@@ -253,10 +266,10 @@ var RControl = {
 			link.init(this.selectedNode, node, "rdf:type", "is");
 			this.model.addLink(link); */
 
-		//if(type==null) {
+		if(type==null || type.uri === undefined) {
 			type = Object.create(RType);
 			type.init(this.createUriFromName($(this.typeInputFielId).val()), $(this.typeInputFielId).val(), null);
-		//}
+		}
 
 			this.model.addTypeToNode(this.selectedNode, type);
 			this.showTypeSelection(false);

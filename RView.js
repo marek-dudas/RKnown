@@ -344,7 +344,9 @@ var RView = {
 		updateSuggestions: function(data) {
 			//this.suggestions.selectAll('tr').remove();
 			d3.select('.no-records-found').remove();
-			this.suggestions = this.suggestions.data(data, function(d){return d.uri});
+			this.suggestions = this.suggestions.data(data, function(d){
+				if(d !== undefined) return d.uri;
+				else return 0;});
 			var suggestionsEnter = this.suggestions.enter().append("tr").on("click", function(d) {
 				RKnown.control.addEntity(d.uri, d.name);
 				d3.select("#suggestionsWidget").style("display", "none");
@@ -360,11 +362,42 @@ var RView = {
 			else d3.select("#suggestionsWidget").style("display", "none");
 			//$("#suggestionTable").bootstrapTable();
 		},
+
+    updateTypeSuggestions: function(data) {
+        //this.suggestions.selectAll('tr').remove();
+        if(data.length>0) {
+            d3.select('.no-records-found').remove();
+            this.suggestions = this.suggestions.data(data, function(d) {
+            	if(d !== undefined) return d.uri;
+            	else return 0;});
+            var suggestionsEnter = this.suggestions.enter().append("tr").on("click", function (d) {
+                RKnown.control.setTypeFromField(d);
+                d3.select("#suggestionsWidget").style("display", "none");
+            })
+                .on('mouseover', function () {
+                    d3.select(this).style("background", "#ddd")
+                })
+                .on('mouseleave', function () {
+                    d3.select(this).style("background", "#fff")
+                });
+            suggestionsEnter.append("td").append("a")
+                .attr("href", "#")
+                .text(function (d) {
+                    return "#" + d.label;
+                });
+            this.suggestions.exit().remove();
+            d3.select("#suggestionsWidget").style("display", "block");
+        }
+        else d3.select("#suggestionsWidget").style("display", "none");
+        //$("#suggestionTable").bootstrapTable();
+    },
 		
 		updatePropSuggestions: function(data) {
 			//this.suggestions.selectAll('tr').remove();
 			d3.select('.no-records-found').remove();
-			this.suggestions = this.suggestions.data(data, function(d){return d.uri});
+			this.suggestions = this.suggestions.data(data, function(d){
+                if(d !== undefined) return d.uri;
+                else return 0;});
 			var suggestionsEnter = this.suggestions.enter().append("tr").on("click", function(d) {
 				RKnown.control.predicateSelected(d);
 				/*RKnown.control.creationLink.setUri(d.uri);
@@ -424,7 +457,7 @@ var RView = {
             var lines = types.enter()
                 .append('tr').append('td')
 				.style('color', function(d) {return d.color})
-				.text(function(d){return '#'+d.label});;
+				.text(function(d){return "#"+d.label});
 		},
 		
 		updateView: function() {

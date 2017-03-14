@@ -18,7 +18,7 @@ var Node = {
 		},
 
 		addType: function(type) {
-			typeExists = false;
+			var typeExists = false;
 			for(var i=0; i<this.types.length; i++) if(this.types[i].uri == type.uri) typeExists = true;
 			if(typeExists == false && this.types.length == 0 && this.color == RSettings.defaultNodeColor) {
                 this.color = type.color;
@@ -231,10 +231,10 @@ var RModel = {
 				}
 			}
 			if(color == null) {
-				color = this.typeColors(this.types.length % 20);
+				color = this.typeColors((this.types.length-1) % 20);
 				this.types.push(type);
 			}
-			type.setColor(color);
+			if(type.color == null) type.setColor(color);
 			node.addType(type);
 		},
 
