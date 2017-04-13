@@ -24,6 +24,8 @@ class UserValidator {
 		
 	}
 	
+	function getUserMail() { return $this->user_mail; }
+	
 	function isQueryForValidGraph($query) {
 		$this->validateToken($_REQUEST["token"]);
 		
@@ -45,21 +47,28 @@ class UserValidator {
 				
 	}
 	
+	//note: bad naming, it now determines whether user has read access to the graph
 	function userOwnsGraph($graph) {
 		global $users_endpoint;
 		$db = sparql_connect( $users_endpoint );
 		if( !$db ) { print sparql_errno() . ": " . sparql_error(). "\n"; exit; }
 		
 		sparql_ns( "dcterms","http://purl.org/dc/terms/" );		
+		sparql_ns ( "rknown", "http://rknown.com/");
 		
-		$sparql = "SELECT * WHERE { $graph dcterms:creator \"".$this->user_mail."\" . } LIMIT 5";
+		$sparql = "SELECT * WHERE { ".
+				  "{ $graph dcterms:creator \"".($this->user_mail)."\" . } ".
+				  "UNION { $graph rknown:viewer \"".($this->user_mail)."\" . } } LIMIT 5";
 		$result = sparql_query( $sparql );
 		if( !$result ) { print sparql_errno() . ": " . sparql_error(). "\n"; exit; }
 		
 		$fields = sparql_field_array( $result );
 		
-		if(sparql_num_rows( $result )>0) return true;
-		else return false;
+		if(sparql_num_rows( $result )>=1) return true;
+		else {
+			echo "access check query was: $sparql";
+			return false;
+		}
 	}
 	
 	function graphExists($graph) {
@@ -73,15 +82,53 @@ class UserValidator {
 		$result = sparql_query( $sparql );
 		if( !$result ) { print sparql_errno() . ": " . sparql_error(). "\n"; exit; }
 		
-		$fields = sparql_field_array( $result );
-		
 		if(sparql_num_rows( $result )>0) return true;
 		else return false;
 	}
 	
+	function getGraphUuid($graph) {
+		global $users_endpoint;
+		$db = sparql_connect( $users_endpoint );
+		if( !$db ) { print sparql_errno() . ": " . sparql_error(). "\n"; exit; }
+		
+		sparql_ns ( "rknown", "http://rknown.com/");
+		
+		$sparql = "SELECT * WHERE { $graph rknown:graph-id ?graphid . }";
+		$result = sparql_query( $sparql );
+		if( !$result ) { print sparql_errno() . ": " . sparql_error(). "\n" . "query was: $sparql"; exit; }
+		
+		/*
+		$fields = sparql_field_array( $result );
+		print "<p>Number of rows: ".sparql_num_rows( $result )." results.</p>";
+		print "<table class='example_table'>";
+		print "<tr>";
+		foreach( $fields as $field )
+		{
+			print "<th>$field</th>";
+		}
+		print "</tr>";
+		while( $row = sparql_fetch_array( $result ) )
+		{
+			print "<tr>";
+			foreach( $fields as $field )
+			{
+				print "<td>$row[$field]</td>";
+			}
+			print "</tr>";
+		}
+		print "</table>";*/
+		
+		
+		$bindings = sparql_fetch_array( $result );
+		if( !$bindings ) echo "Error retrieving graphid";
+		else return $bindings["graphid"];
+	}
+	
 	function recordGraphForUser($graph) {
 		global $user_update_endpoint;
-		$recordGraphQuery = "INSERT DATA { $graph <http://purl.org/dc/terms/creator> \"".($this->user_mail)."\" . }";
+		$recordGraphQuery = "INSERT { $graph <http://purl.org/dc/terms/creator> \"".($this->user_mail)."\" . ".
+							" $graph <http://rknown.com/graph-id> ?uuid . } ".
+							"WHERE { BIND(UUID() AS ?uuid) }";
 		sesameSendUpdate($recordGraphQuery, $user_update_endpoint);
 	}
 	

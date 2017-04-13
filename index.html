@@ -30,7 +30,7 @@
 	<body>
 		<div class="container-fluid">
 		
-			<div class="row">
+			<div class="row" id="rowGraphName">
 				<div class="col-xs-9 col-md-9">
 					<div class="panel panel-primary">
 						<div class="panel-heading">RKnown</div>
@@ -46,29 +46,53 @@
 					</div>	
 				</div>
 
-				<div class="col-xs-3 col-md-3">
-					<div class="g-signin2" data-onsuccess="onSignIn" data-theme="dark"></div>
+				<div class="col-xs-3 col-md-3" id="divSignIn">
+					<div class="panel panel-default">
+						<div class="panel-heading">Please log-in with Google to work with the app:</div>
+						<div class="panel-body">
+							<div class="g-signin2" data-onsuccess="onSignIn" data-theme="dark"></div>
+						</div>
+					</div>
 				</div>
 
 
 			</div>
+
+			<div class="row">
+				<div class="col-xs-12 col-md-12">
+					<div id="graphUrlMessage" class="alert alert-success alert-dismissable collapse">
+						<a href="#" class="close" onclick="$('#graphUrlMessage').hide()">×</a>
+						<strong>Here is the URL for sharing the graph:</strong>
+						<p id="graphUrlP" onclick="selectText('graphUrlP')"></p>
+					</div>
+				</div>
+			</div>
 			
 			<div class="row">
-			   <div class="col-xs-12 col-md-8">
+			   <div class="col-xs-12 col-md-8" id="divCanvas">
 					<div class="panel panel-primary">
-						<div class="panel-heading">
+						<div class="panel-heading" id="canvasHeading">
+							<table width="100%">
+								<tr>
+									<td>
 							Your sketch: <span class="hint">Double-click the canvas to add a new thing.</span>
+									</td>
+									<td align="right">
+								<label for="checkboxFullscreen">Fullscreen</label>
+								<input type="checkbox" data-toggle="toggle" id="checkboxFullscreen"></td>
+								</tr>
+							</table>
 						</div> 
 						<div class="panel-body" id="canvas" style="padding:0px"> </div>
 					</div>	
 				</div>
-				<div class="col-xs-12 col-md-2">
+				<div class="col-xs-12 col-md-2" id="divSuggestions">
 					<div class="panel panel-default">
 						<div class="panel-heading">Suggestions</div> 
 						<div class="panel-body" id="suggestions" style="padding:0px"> </div>
 					</div>    
 				</div>
-				<div class="col-xs-12 col-md-2">
+				<div class="col-xs-12 col-md-2" id="divGraphs">
 			    	<div class="panel panel-default">
 						<div class="panel-heading">Your other sketches</div> 
 						<div class="panel-body" id="graphs"> </div>
@@ -76,7 +100,7 @@
 				</div>	    
 		    </div>
 		    
-		    <div class="row">
+		    <div class="row" id="rowAttributions">
 		    	<div class="col-xs-12">
 					<div class="panel panel-default">
 						<div class="panel-heading">Attributions</div> 

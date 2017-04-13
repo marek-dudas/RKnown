@@ -21,10 +21,21 @@ var Node = {
 			var typeExists = false;
 			for(var i=0; i<this.types.length; i++) if(this.types[i].uri == type.uri) typeExists = true;
 			if(typeExists == false && this.types.length == 0 && this.color == RSettings.defaultNodeColor) {
-                this.color = type.color;
-                this.mainType = type;
+                this.setMainType(type);
             }
 			if(typeExists == false) this.types.push(type);
+		},
+
+		setMainType: function(type) {
+            this.color = type.color;
+            this.mainType = type;
+		},
+
+		deleteType: function(type) {
+			var index = this.types.indexOf(type);
+			if(index >= 0) this.types.splice(index, 1);
+			if(this.types.length > 0) this.setMainType(this.types[0]);
+			else this.color == RSettings.defaultNodeColor;
 		},
 		
 		brUri: function() {
@@ -67,6 +78,7 @@ var Node = {
 				tripleString += "<"+this.uri+"> <"+this.valuations[i].predicate.uri+"> \""+this.valuations[i].value+"\" .\r\n";
 				tripleString += "<"+this.valuations[i].predicate.uri+"> <http://www.w3.org/2000/01/rdf-schema#label> \""+this.valuations[i].predicate.name+"\" ;\r\n" +
 						"				<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#DataProperty> . \r\n";
+				tripleString += Triple.create(this.valuations[i].predicate.uri, URIS.rKnownTypePredicate, "<http://www.w3.org/2002/07/owl#DataProperty>").str();
 			}
 
 			if(this.type == URIS.relation) {
@@ -88,6 +100,11 @@ var Node = {
 		
 		addValuation: function(valuation) {
 			this.valuations.push(valuation);
+		},
+
+		deleteValuation: function(valuation) {
+            var index = this.valuations.indexOf(valuation);
+            if(index>=0) this.valuations.splice(index,1);
 		}
 		
 } 
@@ -162,6 +179,9 @@ var Link = {
 			var triples = Triple.create(this.start.uri, this.uri, this.end.uri).str();
 			triples += Triple.create(this.uri, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
 					"http://www.w3.org/2002/07/owl#ObjectProperty").str();
+
+            triples += Triple.create(this.uri, URIS.rKnownTypePredicate,
+                "http://www.w3.org/2002/07/owl#ObjectProperty").str();
 			triples += "<"+this.uri+"> <http://www.w3.org/2000/01/rdf-schema#label> \""+this.name+"\" .\r\n";
 			return triples;
 		},
@@ -239,8 +259,10 @@ var RModel = {
 		},
 
  		addNode: function(node) {
-			node.id = this.idCounter++;
-			this.nodes.push(node);
+			if(this.getNodeByUri(node.uri) == null) {
+                node.id = this.idCounter++;
+                this.nodes.push(node);
+            }
 		},
 		
 		addSimpleLink: function(from, to) {

@@ -3,7 +3,8 @@ var RSettings = {
 		nodeHeight: 40,
 		relatedNodesCanvasWidth: 320,
 		uriBase: "http://rknown.com/data/",
-		maxPathLength: 5,
+		graphUriBase: "http://rknown.com/graph/",
+		maxPathLength: 3,
 		suggestionsLimit: 10,
 		defaultNodeColor: "#ddd"
 }

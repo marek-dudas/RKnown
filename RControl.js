@@ -3,6 +3,7 @@ var RControl = {
 			this.model = model;
 			this.linkStart = null;
 			this.selectedNode = null;
+			this.selectedValuation = null;
 			this.blankNode = null;
 			this.modelFieldId = '#'+modelFieldId;
 			this.inputFieldId = '#'+inputFieldId;
@@ -71,6 +72,11 @@ var RControl = {
 			this.showAllGraphs();
 		},
 
+	getGraphLink: function(graph) {
+			$.get("server/get-graph-link.php?graph=<"+graph.uri+">&token="+RKnown.userToken, null, function(response)
+				{$('#graphUrlP').text(response); $('#graphUrlMessage').show();});
+	},
+
 	showTypeSuggestions: function() {
 		var userInput = $(this.typeInputFielId).val();
 		var suggestedTypes = [];
@@ -128,10 +134,16 @@ var RControl = {
 			}
 			newValuation.setPredicate(this.creationPredicate);
 			newValuation.setValue($('#literalValue').val());
-			this.selectedNode.addValuation(newValuation);
+			if(this.selectedValuation == null) this.selectedNode.addValuation(newValuation);
+			else {
+                this.selectedValuation.setPredicate(newValuation.predicate);
+                this.selectedValuation.setValue(newValuation.value);
+                this.view.showNodeProperties(this.selectedNode);
+            }
 			d3.select('#literalInput').style("display", "none");
 			this.creationPredicate = null;
-			this.showPredicateSelection(false);
+            this.selectedValuation = null;
+            this.showPredicateSelection(false);
 		},
 		
 		addRelatedNodes: function(nodes) {
@@ -180,7 +192,7 @@ var RControl = {
 		},
 		
 		save: function() {
-			this.model.name = "http://test/"+($(this.modelFieldId).val());
+			this.model.name = RSettings.graphUriBase+RKnown.userEmail+"/"+encodeURIComponent($(this.modelFieldId).val());
 			SparqlFace.currentGraph = this.model.name;
 			SparqlFace.graphSavedCallback = this.showAllGraphs.bind(this);
 			SparqlFace.saveGraph(this.model.getRdf())
@@ -236,11 +248,10 @@ var RControl = {
 	},
 		
 		showTypeSelection: function(visible) {
-			if(this.selectedNode!=null) {
-				d3.select('#typeSelection').style("left", this.selectedNode.x+30)
-				.style("top", this.selectedNode.y-30);
-			}
 			d3.select('#typeSelection').style("display", visible?"block":"none");
+            $(this.typeInputFielId).val("");
+            $(this.typeInputFielId).focus();
+            this.moveToMousePos(d3.select('#typeSelection'));
 		},
 		
 		setPredicateNameFromField: function() {
@@ -342,6 +353,7 @@ var RControl = {
     },
 		
 		canvasMouseDown: function(location, node) {
+			this.selectedValuation = null;
 			if(this.linkStart != null && node!=null) {
 				this.creationLink.setEnd(node);
 				this.linkStart = null;
@@ -440,12 +452,30 @@ var RControl = {
 		},
 		
 		literalButtonClick: function() {
-			this.view.showLiteralInput(this.selectedNode);
+			this.view.showLiteralInput(this.selectedNode, null);
 			$('#literalPredicateField').focus();
             $('#literalPredicateField').val("");
             $('#literalValue').val("");
 			d3.event.stopPropagation();
 		},
+
+    editNodeProperty: function(valuation) {
+			this.selectedValuation = valuation;
+			this.creationPredicate = valuation.predicate;
+        this.view.showLiteralInput(this.selectedNode, valuation);
+        $('#literalValue').focus();
+	},
+
+    deleteNodeProperty: function(valuation) {
+		this.selectedNode.deleteValuation(valuation);
+		this.view.showNodeProperties(this.selectedNode);
+	},
+
+	deleteNodeType: function(type) {
+		this.selectedNode.deleteType(type);
+		this.view.updateView();
+		this.view.showNodeTypes(this.selectedNode);
+	},
 
     delButtonClick: function() {
 		    if(this.selectedNode !=null) {
