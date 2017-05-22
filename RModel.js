@@ -1,13 +1,10 @@
 var Node = {
 		init: function(uri, name, type) {
 			this.selected = false;
-			this.name = name;
 			this.uri = SparqlFace.stripBrackets(uri);
 			this.id = -1;
 			this.visible = true;
 			this.typeNode = false;
-			this.width = RSettings.nodeWidth;
-			this.height = RSettings.nodeHeight;
 			this.valuations = [];
 			this.type = URIS.object;
 			this.types = [];
@@ -15,6 +12,25 @@ var Node = {
             this.color = RSettings.defaultNodeColor;
             this.mainType = null;
 			if(type != null) this.type = type;
+			this.name = name;
+			this.updateDimensions();
+            if(name instanceof Promise) name.then(this.setName.bind(this));
+
+		},
+
+		updateDimensions: function() {
+			if(this.name != "") {
+                this.width = RSettings.nodeWidth;
+                this.height = RSettings.nodeHeight;
+			}
+			else {
+				this.width = RSettings.emptyNodeWidth;
+				this.height = RSettings.emptyNodeHeight;
+			}
+		},
+
+		setName: function(name) {
+			this.name = name;
 		},
 
 		addType: function(type) {
@@ -43,7 +59,7 @@ var Node = {
 		},
 
 	setPredicateUri: function(uri) {
-		this.predicateUri = uri;
+		this.predicateUri = SparqlFace.stripBrackets(uri);
 	},
 		
 		setTypeNode: function() {
@@ -170,10 +186,9 @@ var Link = {
 			this.right = true;
 			this.left = false;
 			this.id = -1;
-			this.name = name;
 			this.uri = SparqlFace.stripBrackets(uri);
-			/*this.startUri;
-			this.endUri;*/
+			this.name = name;
+			if(name instanceof Promise) name.then(this.setName.bind(this));
 		},
 		triplify: function() {
 			var triples = Triple.create(this.start.uri, this.uri, this.end.uri).str();

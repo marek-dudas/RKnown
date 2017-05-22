@@ -124,6 +124,8 @@
 	    <div class="popover" style="max-width: 30%"
     		 id="propertiesWidget" class="settingsPopUp">
     		 <div class="popover-content">
+				 <table id="typesTable" class="table-striped">
+				 </table>
     		 		<table id="propertiesTable" class="table-striped">
     		 		</table>
     		 </div>
@@ -132,7 +134,7 @@
 		<div class="popover" style="max-width: 30%"
 			 id="typesWidget" class="settingsPopUp">
 			<div class="popover-content">
-				<table id="typesTable" class="table-striped">
+				<table id="typesTable-old" class="table-striped">
 				</table>
 			</div>
 		</div>
@@ -165,11 +167,14 @@
     		 </div>
 	    </div>
 	    
-	    <div class="popover"
+	    <div class="popover" style="z-index:9999"
     		 id="suggestionsWidget" class="settingsPopUp">
     		 <div class="popover-content">
     		 		<table id="suggestionTable" class="table-hover">
     		 		</table>
+				 	<div id="searchingMore">
+						Searching for more suggestions...
+					</div>
     		 </div>
 	    </div>
 	    
@@ -190,6 +195,7 @@
   		<script src="SparqlFace.js"></script>
 	    <script src="RModel.js"></script>
 	    <script src="Geometry.js"></script>
+		<script src="SuggestionsControl.js"></script>
 	    <script src="RControl.js"></script>
 	    <script src="RView.js"></script>
 	    <script src="RKnown.js"></script>

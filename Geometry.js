@@ -91,7 +91,7 @@ function Line(start, end) {
 
 Node.linkIntersection = function(link, nearTo){
 	if(this.type == "<http://rknown.com/RKnownRelation>") return this.diamondIntersection(link, nearTo);
-	else return this.ellipseIntersection(link, nearTo);
+	else return this.rectIntersection(link, nearTo);
 }
 
 Node.ellipseIntersection = function(link, nearTo){
@@ -101,6 +101,22 @@ Node.ellipseIntersection = function(link, nearTo){
 	ellipse.x = this.x;
 	ellipse.y = this.y;
 	return Geometry.nearEllipseIntersection(ellipse, link, nearTo);
+};
+
+Node.rectIntersection = function(link, nearTo){
+    var lines = [
+        new Line(new Point(this.x-this.width/2, this.y-this.height/2), new Point(this.x+this.width/2, this.y-this.height/2)),
+        new Line(new Point(this.x-this.width/2, this.y-this.height/2), new Point(this.x-this.width/2, this.y+this.height/2)),
+        new Line(new Point(this.x+this.width/2, this.y-this.height/2), new Point(this.x+this.width/2, this.y+this.height/2)),
+        new Line(new Point(this.x+this.width/2, this.y+this.height/2), new Point(this.x-this.width/2, this.y+this.height/2)),
+    ];
+    var intersections = [];
+    for(var i=0; i<4; i++) {
+        var inters = Geometry.rayLineIntersection(link.start, Geometry.lineEquation(link.start,link.end), lines[i].start, lines[i].end);
+        if(inters!=null) intersections.push(inters);
+    }
+    if(intersections.length==0) return null;
+    return Geometry.nearPoint(nearTo, intersections);
 };
 
 Node.diamondIntersection = function(link, nearTo){

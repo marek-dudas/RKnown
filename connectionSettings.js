@@ -7,3 +7,4 @@ RSettings.sparqlProxy = "server/sparql-proxy.php";
     RSettings.sparqlUpdateProxy= "server/sparql-update-proxy.php";
     RSettings.sparqlUpdateEndpoint= "http://localhost:8080/openrdf-sesame/repositories/rknown2/statements";
     RSettings.graphLinkServiceUrl = "server/register-shared-graph.php";
+    RSettings.externalEndpoint = "http://rknown.vserver.cz:8080/rdf4j-server/repositories/external";

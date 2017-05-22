@@ -15,8 +15,40 @@ var RControl = {
 			this.creationPredicate = null;
 			this.newNodeLocation = [100,100];
 			SparqlFace.config(this.fillInputField.bind(this), this.fillPredicateField.bind(this), this.addRelatedNodes.bind(this));
-			//SparqlFace.getAllEntities();
-			//SparqlFace.getAllPredicates();
+            var now = new Date();
+            this.lastTickCount = now.getTime();
+            this.justShownSuggestions = true;
+
+            this.entityInputControl = Object.create(SuggestionsControl);
+            this.entityInputControl.setSuggestionCall(function() {
+                d3.select("#suggestionsWidget").style("left", $(RKnown.control.inputFieldId).offset().left+"px")
+                    .style("top", ($(RKnown.control.inputFieldId).offset().top + $(RKnown.control.inputFieldId).outerHeight()) + "px");
+                //SparqlFace.textSearch($(this).val(), URIS.object, RKnown.view.updateSuggestions.bind(RKnown.view));
+                RKnown.control.updateSuggestions(RKnown.control.inputFieldId, URIS.object, RKnown.view.updateSuggestions.bind(RKnown.view));
+			});
+
+            this.predicateInputControl = Object.create(SuggestionsControl);
+            this.predicateInputControl.setSuggestionCall(function() {
+                d3.select("#suggestionsWidget").style("left", $(RKnown.control.predicateInputFieldId).offset().left+"px")
+                    .style("top", ($(RKnown.control.predicateInputFieldId).offset().top + $(RKnown.control.predicateInputFieldId).outerHeight()) + "px");
+                RKnown.control.updateSuggestions(RKnown.control.predicateInputFieldId, "<http://www.w3.org/2002/07/owl#ObjectProperty>", RKnown.view.updatePropSuggestions.bind(RKnown.view));
+			});
+
+            this.literalInputControl = Object.create(SuggestionsControl);
+            this.literalInputControl.setSuggestionCall(function() {
+                RKnown.control.addingLiteral = true;
+                d3.select("#suggestionsWidget").style("left", $('#literalPredicateField').offset().left+"px")
+                    .style("top", ($('#literalPredicateField').offset().top + $('#literalPredicateField').outerHeight()) + "px");
+                RKnown.control.updateSuggestions($('#literalPredicateField'), "<http://www.w3.org/2002/07/owl#DataProperty>",
+                    RKnown.view.updatePropSuggestions.bind(RKnown.view))
+			});
+
+            this.typeInputControl = Object.create(SuggestionsControl);
+            this.typeInputControl.setSuggestionCall(function() {
+                d3.select("#suggestionsWidget").style("left", $(RKnown.control.typeInputFielId).offset().left+"px")
+                    .style("top", ($(RKnown.control.typeInputFielId).offset().top + $(RKnown.control.typeInputFielId).outerHeight()) + "px");
+                RKnown.control.showTypeSuggestions();
+			});
 			
 			$(this.inputFieldId).bind("enterKey", this.addEntityFromTextField.bind(this));
 			$(this.inputFieldId).keyup(function(e){
@@ -26,9 +58,7 @@ var RControl = {
 			    }
 			    else {
 			    	if($(this).val()!="") {
-				    	d3.select("#suggestionsWidget").style("left", $(this).offset().left+"px")
-				    		.style("top", ($(this).offset().top + $(this).outerHeight()) + "px");
-				    	SparqlFace.textSearch($(this).val(), URIS.object, RKnown.view.updateSuggestions.bind(RKnown.view));
+				    	RKnown.control.entityInputControl.keyPressed();
 			    	}
 			    	else d3.select("#suggestionsWidget").style("display", "none");
 			    }
@@ -42,29 +72,24 @@ var RControl = {
 			    }
 			    else {
 			    	if($(this).val() != "") {
-				    	d3.select("#suggestionsWidget").style("left", $(this).offset().left+"px")
-				    		.style("top", ($(this).offset().top + $(this).outerHeight()) + "px");
-						SparqlFace.textSearch($(this).val(), "<http://www.w3.org/2002/07/owl#ObjectProperty>", RKnown.view.updatePropSuggestions.bind(RKnown.view))
+				    	RKnown.control.predicateInputControl.keyPressed();
 			    	}
 			    }
 			});
 			
 			$('#literalPredicateField').keyup(function(e){
-	    		RKnown.control.addingLiteral = true;
-				d3.select("#suggestionsWidget").style("left", $(this).offset().left+"px")
-				    		.style("top", ($(this).offset().top + $(this).outerHeight()) + "px");
-						SparqlFace.textSearch($(this).val(), "<http://www.w3.org/2002/07/owl#DataProperty>", RKnown.view.updatePropSuggestions.bind(RKnown.view))
+	    		RKnown.control.literalInputControl.keyPressed();
 			})
 			
 			$(this.typeInputFielId).bind("enterKey", this.setTypeFromField.bind(this));
 			$(this.typeInputFielId).keyup(function(e){
-                d3.select("#suggestionsWidget").style("left", $(this).offset().left+"px")
-                    .style("top", ($(this).offset().top + $(this).outerHeight()) + "px");
-                RKnown.control.showTypeSuggestions();
 			    if(e.keyCode == 13)
 			    {
 			        $(this).trigger("enterKey");
 			    }
+			    else {
+			    	RKnown.control.typeInputControl.keyPressed();
+				}
 			});
 			
 			d3.select('#btnSave').on('click', this.save.bind(this));
@@ -92,10 +117,22 @@ var RControl = {
 			this.view.updateView();
 		},
 		
-		updateSuggestions: function(text, type) {
-			SparqlFace.textSearch(text, type, function(objects){RKnown.view.updateSuggestions(objects);})
+		updateSuggestions: function(textSource, type, callback) {
+			this.suggestionTextSource = textSource;
+			this.suggestionCallback = callback;
+			SparqlFace.textSearch($(textSource).val(), type, this.sendSuggestionsToView.bind(this)); //function(objects){RKnown.view.updateSuggestions(objects);})
 		},
-		
+
+	sendSuggestionsToView: function(objects, isExtra) {
+		var areRelevant = false;
+		var currentTextInput = $(this.suggestionTextSource).val();
+		if(currentTextInput == "") return null;
+		for(var i=0; i<objects.length; i++) {
+			if(objects[i].uri.includes(currentTextInput) || objects[i].name.includes(currentTextInput)) areRelevant = true;
+		}
+		if(areRelevant) this.suggestionCallback(objects, isExtra);
+	},
+
 		showAllGraphs: function() {
 			SparqlFace.getGraphs(this.setGraphs.bind(this));
 		},
@@ -205,6 +242,7 @@ var RControl = {
 		showPredicateSelection: function(visible) {
 			d3.select('#predicateSelection').style("display", visible?"block":"none");
 			if(visible) {
+                this.justShownSuggestions = true;
 			    $(this.predicateInputFieldId).focus();
 			    $(this.predicateInputFieldId).val("");
 			    this.moveToMousePos(d3.select('#predicateSelection'));
@@ -214,6 +252,7 @@ var RControl = {
     showEntityWidget: function(visible) {
         d3.select('#newEntityWidget').style("display", visible?"block":"none");
         if(visible) {
+        	this.justShownSuggestions = true;
             $(this.inputFieldId).focus();
             $(this.inputFieldId).val("");
             this.moveToMousePos(d3.select('#newEntityWidget'));
@@ -248,6 +287,7 @@ var RControl = {
 	},
 		
 		showTypeSelection: function(visible) {
+            this.justShownSuggestions = true;
 			d3.select('#typeSelection').style("display", visible?"block":"none");
             $(this.typeInputFielId).val("");
             $(this.typeInputFielId).focus();
@@ -255,8 +295,15 @@ var RControl = {
 		},
 		
 		setPredicateNameFromField: function() {
-			this.creationLink.setUri(this.createUriFromName($(this.predicateInputFieldId).val()));
-			this.creationLink.setName($(this.predicateInputFieldId).val());
+			var enteredName = $(this.predicateInputFieldId).val();
+			if(enteredName != "") {
+                this.creationLink.setUri(this.createUriFromName(enteredName));
+                this.creationLink.setName(enteredName);
+            }
+            else {
+				this.creationLink.setUri(URIS.relatedToPredicate);
+				this.creationLink.setName("");
+			}
 			this.showPredicateSelection(false);
 			this.addRelationLink();
 			this.view.updateView();
@@ -307,7 +354,7 @@ var RControl = {
 			uri = SparqlFace.stripBrackets(uri);
 			if(this.model.getNodeByUri(uri) == null) {
 				var node = Object.create(Node);
-				node.init(uri, SparqlFace.nameFromUri(uri));
+				node.init(uri, SparqlFace.findLabel(uri));
 				node.x = this.newNodeLocation[0];
 				node.y = this.newNodeLocation[1];
 				this.model.addNode(node);
@@ -315,7 +362,7 @@ var RControl = {
 		},
 		
 		addLinkFromUri: function(from, link, to) {
-			this.model.addLinkByUris(link, SparqlFace.nameFromUri(link), from, to);
+			this.model.addLinkByUris(link, SparqlFace.findLabel(link), from, to);
 		},
 		
 		addEntity: function(uri, name) {

@@ -389,7 +389,7 @@ var RView = {
 		 this.relatedNodes.exit().remove();
 		},
 		
-		updateSuggestions: function(data) {
+		updateSuggestions: function(data, isExtra) {
 			//this.suggestions.selectAll('tr').remove();
 			d3.select('.no-records-found').remove();
 			this.suggestions = this.suggestions.data(data, function(d){
@@ -406,8 +406,10 @@ var RView = {
 				.text(function(d) {return d.name;});
 			suggestionsEnter.append("td").text(function(d) {d.getComment();})
 			this.suggestions.exit().remove();
-			if(data.length>0) d3.select("#suggestionsWidget").style("display", "block");
+			if(data.length>0 || !isExtra) d3.select("#suggestionsWidget").style("display", "block");
 			else d3.select("#suggestionsWidget").style("display", "none");
+			if(isExtra) d3.select("#searchingMore").style("display", "none");
+			else d3.select("#searchingMore").style("display", "block");
 			//$("#suggestionTable").bootstrapTable();
 		},
 
@@ -506,9 +508,9 @@ var RView = {
 		},
 
 		showNodeTypes: function(node) {
-            d3.select('#typesWidget').style("display", "block")
+            /*d3.select('#typesWidget').style("display", "block")
                 .style("left", d3.mouse(d3.select("body").node())[0]-50+"px")
-                .style("top", d3.mouse(d3.select("body").node())[1]+10+"px");
+                .style("top", d3.mouse(d3.select("body").node())[1]+10+"px");*/
             d3.select('#typesTable').selectAll('tr').remove();
             var types = d3.select('#typesTable').selectAll('tr');
             types = types.data(node.types);
@@ -662,13 +664,17 @@ Node.getPathData = function() {
 	//this.height=40;
 	if(this.type == "<http://rknown.com/RKnownRelation>")
 		return this.diamondPath(this.width, this.height);
-	else return this.path(this.width, this.height);
+	else return this.rectPath(this.width, this.height);
 };
 
 Node.path = function(width, height) {
 	return "M"+(0)+","+(-height/2)+" a"+width/2+" "+height/2+" 0 1 0 1,0 z";	
-}
+};
+
+Node.rectPath = function(width, height) {
+    return "M"+(-width/2)+","+(-height/2)+" l "+width+","+(0)+" l "+(0)+","+(height)+" l "+(-width)+","+(0)+" z";
+};
 
 Node.diamondPath = function(width, height) {
 	return "M"+(-width/2)+","+(0)+" l "+width/2+","+height/2+" l "+width/2+","+(-height/2)+" l "+(-width/2)+","+(-height/2)+" z";
-}
+};
