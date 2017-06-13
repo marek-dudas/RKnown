@@ -9,6 +9,7 @@ var RView = {
 			this.height = $(window).height()-200;
 			
 		    this.layoutRunning = false;
+            this.layout = null;
 		    
 		    this.viewingElement = d3.select("#"+viewingElement);
 		    
@@ -70,12 +71,15 @@ var RView = {
 		    this.svg = this.svg.append("svg:g");
 		    
 		    	
-			this.nodes = this.svg.append("svg:g").selectAll("g");
-			this.edges = this.svg.append("svg:g").selectAll("line");
-			this.linktext = this.svg.append("svg:g").selectAll("g.linklabelholder");
+			//update due to d3.v3 to v4 transition
+		    //this.nodes = this.svg.append("svg:g").selectAll("g");
+			//this.edges = this.svg.append("svg:g").selectAll("line");
+			this.nodesGroup = this.svg.append("svg:g");
+			this.edgesGroup = this.svg.append("svg:g");
+			//this.linktext = this.svg.append("svg:g").selectAll("g.linklabelholder");
 			
 			// create the zoom listener
-			var zoomListener = d3.behavior.zoom()
+			var zoomListener = d3.zoom()
 			  .scaleExtent([0.1, 2])
 			  .on("zoom", this.zoomHandler.bind(this));
 			// function for handling zoom event			
@@ -124,7 +128,9 @@ var RView = {
 			var height = $(window).height() - currentSize.top - headerHeight - 5;
 			//alert(height);
 			view.rootSvg.attr("width", currentSize.width).attr("height", height);
-			view.layout.size([currentSize.width, height]);
+
+			// removed when updating to d3.v4
+			//view.layout.size([currentSize.width, height]);
 
 			var currentSize = view.relatedCanvas.node().getBoundingClientRect();
 			view.relatedSvg.attr("width", currentSize.width).attr("height", height);
@@ -272,7 +278,7 @@ var RView = {
 		
 		zoomHandler: function () {
 			var scale = 1 - ( (1 - d3.event.scale) * 0.1 );
-		  this.svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+		  this.svg.attr("transform", "translate(" + d3.event.transform.x + ", " + d3.event.transform.y + ")scale(" + d3.event.transform.k + ")");
 		},
 
 	/*
@@ -284,25 +290,33 @@ var RView = {
 		
 		startLayout: function() {
 			this.tickCounter = 0;
-			this.layout = d3.layout.force()
+			if(this.layout == null) this.layout = d3.forceSimulation(this.model.nodes)
+				.force("links", 	d3.forceLink(this.model.links))
+				.force("charge", d3.forceManyBody())
+				.force("center", d3.forceCenter())
+            	.on("tick", this.tick.bind(this));
+
+			this.layout.restart();
+				/* d3.v3 legacy style
 			    .size([this.width, this.height])
 			    .nodes(this.model.nodes)
 			    .links(this.model.links)
 			    .linkDistance(150) //200
 			    .charge(-1200) //-1500
-			    .on("tick", this.tick.bind(this));
+			    .on("tick", this.tick.bind(this)); */
+
 		},
 		
 		tick: function() {
 		    
-		    if(this.model.nodes.length>0 && this.nodes.length>0){
-			    this.nodes.attr('transform', function(d) {
+		    if(this.model.nodes.length>0){
+			    this.getNodesD3().attr('transform', function(d) {
 		    		return 'translate(' + d.x + ',' + d.y + ')';
 		  		});
 		    }
 		    
-			if(this.model.links.length>0 && this.edges.length>0){
-				this.edges.attr("x1", function(d) { d.countStartFromIntersection(); return d.startX; })
+			if(this.model.links.length>0){
+				this.getEdgesD3().attr("x1", function(d) { d.countStartFromIntersection(); return d.startX; })
 			     .attr("y1", function(d) { return d.startY; })
 			     .attr("x2", function(d) { d.countEndFromIntersection(); return d.endX;})
 			     .attr("y2", function(d) { return d.endY; });
@@ -317,7 +331,7 @@ var RView = {
 		
 		setData: function(model) {
 			this.model = model;
-			this.startLayout();
+			//this.startLayout();
 		},
 		
 		setDraggedNode: function(node) {
@@ -384,7 +398,7 @@ var RView = {
 		     .attr("dx", 1)
 		     .attr("dy", ".35em");
 		 	 
-		 this.nodes.selectAll(".nodename").text(function(d) {return d.name;});
+		 //this.nodes.selectAll(".nodename").text(function(d) {return d.name;});
 		 
 		 this.relatedNodes.exit().remove();
 		},
@@ -511,24 +525,45 @@ var RView = {
             /*d3.select('#typesWidget').style("display", "block")
                 .style("left", d3.mouse(d3.select("body").node())[0]-50+"px")
                 .style("top", d3.mouse(d3.select("body").node())[1]+10+"px");*/
+
             d3.select('#typesTable').selectAll('tr').remove();
             var types = d3.select('#typesTable').selectAll('tr');
             types = types.data(node.types);
             var rows = types.enter()
                 .append('tr');
-            rows.append('td')
-				.style('color', function(d) {return d.color})
+            var buttons = rows.append('td').append('button')
+				.attr("class", function(d) {return "jscolor {valueElement:null,value:'"+d.getColor()+"'}"; })
+				.on("change", function(d) {d.setColor(this.jscolor); RKnown.view.updateView();})
+				//.style('color', function(d) {return d.getColor();})
 				.text(function(d){return "#"+d.label});
             rows.append('td').append("a")
                 .attr("href", "#")
                 .on("click", function(d) {RKnown.control.deleteNodeType(d);})
                 .append("img")
                 .attr("src", "png/glyphicons-208-remove.png");
+
+            function addColorPicker(selection) {
+            	selection.each(function(d) {
+            		var picker = new jscolor(this, {closable:true,closeText:'Close',valueElement:null,onFineChange:'RKnown.control.setColorFromPicker(this)'});
+            		picker._relatedRKnownType = d;
+            		picker.fromString(d.getColor());
+				})
+			}
+
+			buttons.call(addColorPicker);
+		},
+
+		getEdgesD3: function() {
+            return this.edgesGroup.selectAll("line").data(this.model.links, function(d) {return d.id;});
+		},
+
+		getNodesD3: function() {
+            return this.nodesGroup.selectAll("g").data(this.model.nodes, function(d) {return d.id;});
 		},
 		
 		updateView: function() {
 			   
-		    this.edges = this.edges.data(this.model.links, function(d) {return d.id;});    
+		    this.edges = this.getEdgesD3();// this.edgesGroup.selectAll("line").data(this.model.links, function(d) {return d.id;});
 		    
 			this.edges.enter()
 			        .append("line")
@@ -582,12 +617,12 @@ var RView = {
 		    	
 		    	  
 		    	var canvasSvg = this.svg;
-			    this.nodes = this.nodes.data(this.model.nodes, function(d) {return d.id;});  
+			    this.nodes = this.getNodesD3(); // this.nodesGroup.selectAll("g").data(this.model.nodes, function(d) {return d.id;});
 			    
-			    var node_drag = d3.behavior.drag()
-		        .on("dragstart", dragstart)
+			    var node_drag = d3.drag()
+		        .on("start", dragstart)
 		        .on("drag", dragmove)
-		        .on("dragend", dragend);
+		        .on("end", dragend);
 		        
 		        var view = this;
 
@@ -638,22 +673,47 @@ var RView = {
 			        
 			    nodesEnter.append("text")
 			    	.classed("nodename", true)
-			    	.text(function(d) { return d.name; })	    	
-		      		.style("font-size", function(d) { 
+			    	//.text(function(d) { return d.name; })
+		      		/*.style("font-size", function(d) {
 		      			return Math.max(Math.min(18, Math.min(d.width, (d.width - 8) 
-		      			/ this.getComputedTextLength() * 14)), 13) + "px"; })      			
+		      			/ this.getComputedTextLength() * 14)), 13) + "px"; })*/
 					.attr("x","0")//function(d) {return d.width/2+2;})
 					.attr("y","0") 
 				     .attr("dx", 1)
-				     .attr("dy", ".35em");
+				     .attr("dy", "1em");
 				 	 
-				 this.nodes.selectAll(".nodename").text(function(d) {return d.name;});   
-				 this.nodes.selectAll("path")
-					 .classed("selected", function(d) {return d.selected;})
-                     .style("fill", function(d) {return d.color;});
-				this.nodes.exit().remove();
-		    
-		    if(this.layoutRunning) this.layout.start();
+				 //this.getNodesD3().call(showNodeText); //.text(function(d) {return d.name;});
+				 //this.nodes.selectAll("path")
+				//	 .classed("selected", function(d) {return d.selected;})
+                //     .style("fill", function(d) {return d.getColor();});
+
+            nodesEnter.merge(this.nodes).call(showNodeText);
+            nodesEnter.merge(this.nodes).selectAll("path")
+					 .attr("d", function(d) {
+                		return d.getPathData();})
+                .classed("selected", function(d) {return d.selected;})
+                .style("fill", function(d) {return d.getColor();});
+
+            function showSearchHighlight(selection) {
+                selection.each(function(d) {
+                	if(d.searchHighlight) {
+                        d3.select(this).append("circle")
+							.attr("cx", 0)
+							.attr("cy", 0)
+							.attr("r", d.width/2+30)
+							.attr("stroke", "red")
+							.attr("stroke-width", 5)
+							.attr("fill", "none")
+					}
+					else d3.select(this).select("circle").remove();
+                });
+			}
+            nodesEnter.merge(this.nodes).call(showSearchHighlight);
+
+            this.nodes.exit().remove();
+
+            if(this.layoutRunning) this.startLayout();
+            else if(this.layout!=null) this.layout.stop();
 		    this.tick();
 		    
 		}

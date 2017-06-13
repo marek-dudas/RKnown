@@ -14,7 +14,9 @@ var Node = {
 			if(type != null) this.type = type;
 			this.name = name;
 			this.updateDimensions();
-            if(name instanceof Promise) name.then(this.setName.bind(this));
+			this.searchHighlight = false;
+            if(typeof name.then !== 'undefined') name.then(this.setName.bind(this));
+            this.labels = [];
 
 		},
 
@@ -42,6 +44,11 @@ var Node = {
 			if(typeExists == false) this.types.push(type);
 		},
 
+		getColor: function() {
+			if(this.mainType!=null) return this.mainType.color;
+			else return this.color;
+		},
+
 		setMainType: function(type) {
             this.color = type.color;
             this.mainType = type;
@@ -51,7 +58,10 @@ var Node = {
 			var index = this.types.indexOf(type);
 			if(index >= 0) this.types.splice(index, 1);
 			if(this.types.length > 0) this.setMainType(this.types[0]);
-			else this.color == RSettings.defaultNodeColor;
+			else {
+                this.mainType = null;
+                this.color == RSettings.defaultNodeColor;
+            }
 		},
 		
 		brUri: function() {
@@ -188,7 +198,7 @@ var Link = {
 			this.id = -1;
 			this.uri = SparqlFace.stripBrackets(uri);
 			this.name = name;
-			if(name instanceof Promise) name.then(this.setName.bind(this));
+            if(typeof name.then !== 'undefined') name.then(this.setName.bind(this));
 		},
 		triplify: function() {
 			var triples = Triple.create(this.start.uri, this.uri, this.end.uri).str();
@@ -251,7 +261,7 @@ var RModel = {
 			this.vocabs = [];
 			this.created = Date.now();
 			this.types = [];
-			this.typeColors = d3.scale.category20();
+			this.typeColors = d3.scaleOrdinal(d3.schemeCategory10);
 		},
 
 		addType: function(type) {
@@ -263,10 +273,11 @@ var RModel = {
 			for(var i=0; i<this.types.length; i++) {
 				if(this.types[i].uri == type.uri) {
 					color = this.types[i].color;
+					type = this.types[i];
 				}
 			}
 			if(color == null) {
-				color = this.typeColors((this.types.length-1) % 20);
+				color = this.typeColors((this.types.length-1) % 10);
 				this.types.push(type);
 			}
 			if(type.color == null) type.setColor(color);

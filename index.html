@@ -77,6 +77,10 @@
 									<td>
 							Your sketch: <span class="hint">Double-click the canvas to add a new thing.</span>
 									</td>
+									<td>
+										<label for="textSearchField">Search</label>
+										<input type="text" id="textSearchField" style="color:black">
+									</td>
 									<td align="right">
 								<label for="checkboxFullscreen">Fullscreen</label>
 								<input type="checkbox" data-toggle="toggle" id="checkboxFullscreen"></td>
@@ -121,7 +125,7 @@
 				</div>
 		</div>
 
-	    <div class="popover" style="max-width: 30%"
+	    <div class="popover" style="max-width: 30%; z-index:2;"
     		 id="propertiesWidget" class="settingsPopUp">
     		 <div class="popover-content">
 				 <table id="typesTable" class="table-striped">
@@ -184,9 +188,11 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.0/bootstrap-table.min.js"></script>
 <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
 
-  		<script src="https://d3js.org/d3.v3.min.js"></script>
+  		<script src="https://d3js.org/d3.v4.min.js"></script>
 		<script src="http://cdnjs.cloudflare.com/ajax/libs/jsonld/0.3.15/jsonld.js"></script>
-  
+		<script src="external/jscolor.js"></script>
+
+
   		<script src="settings.js"></script>
 		<script src="connectionSettings.js"></script>
 		<script src="tools.js"></script>

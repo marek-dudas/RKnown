@@ -91,11 +91,26 @@ var RControl = {
 			    	RKnown.control.typeInputControl.keyPressed();
 				}
 			});
+
+			$('#textSearchField').keyup(function(e){
+				if(e.keyCode == 13) {
+					RKnown.control.highlightSearch($(this).val());
+				}
+			});
 			
 			d3.select('#btnSave').on('click', this.save.bind(this));
 			
 			this.showAllGraphs();
 		},
+
+	highlightSearch: function(searchText) {
+		for(var i=0; i<this.model.nodes.length; i++) {
+			var node=this.model.nodes[i];
+			if(searchText!="" && node.name.includes(searchText)) node.searchHighlight = true;
+			else node.searchHighlight = false;
+		}
+		this.view.updateView();
+	},
 
 	getGraphLink: function(graph) {
 			$.get("server/get-graph-link.php?graph=<"+graph.uri+">&token="+RKnown.userToken, null, function(response)
@@ -334,6 +349,11 @@ var RControl = {
 			this.view.updateView();
 			
 		},
+
+	setColorFromPicker: function(jscolorPicker) {
+		jscolorPicker._relatedRKnownType.setColor('#'+jscolorPicker);
+		this.view.updateView();
+	},
 		
 		getEntityUriBase: function() {
 			return this.model.getEntityUriBase();
@@ -468,13 +488,11 @@ var RControl = {
 				this.selectNode(node, false);
 				this.view.showNodeButtons(this.selectedNode.x+60, this.selectedNode.y);
 				this.view.updateView();
-				if(node.valuations.length > 0) 
+				if(node.valuations.length > 0 || node.types.length > 0) {
 					this.view.showNodeProperties(node);
+                	this.view.showNodeTypes(node);
+				}
 				else this.hideNodeProperties();
-				if(node.types.length > 0)
-					this.view.showNodeTypes(node);
-				else this.hideNodeTypes();
-
 			}
 		},
 		

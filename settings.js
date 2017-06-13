@@ -9,7 +9,8 @@ var RSettings = {
 		maxPathLength: 3,
 		suggestionsLimit: 10,
 		defaultNodeColor: "#ddd",
-	    suggestionWaitTime: 200
+	    suggestionWaitTime: 200,
+		nodeLabelMargin: 5
 }
 
 var URIS = {

@@ -181,7 +181,7 @@ var SparqlFace = {
             var nodeType = Object.create(RType);
             nodeType.init(typeUri, label, color);
             var node = this.model.getNodeByUri(objUri);
-            if(node!=null) node.addType(nodeType);
+            if(node!=null) this.model.addTypeToNode(node, nodeType);//node.addType(nodeType);
         }
 
         this.loadGraphCallback(this.model);
